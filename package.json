@@ -1,27 +1,43 @@
 {
-  "name": "node-commerce-backend",
+  "name": "js-football-manager",
   "version": "0.0.1",
   "description": "",
-  "main": "index.js",
+  "main": "server.js",
   "scripts": {
     "clean": "rimraf ./build",
     "build": "npm run clean && tsc",
-    "start": "node src",
-    "local": "ts-node src",
+    "start": "node build/src/backend/server.js",
+    "local": "ts-node src/backend",
     "local:watch": "nodemon",
-    "test": "jest"
+    "test": "jest --coverage",
+    "lint": "eslint src --ext js,ts,tsx",
+    "lint:fix": "eslint src --ext js,ts,tsx --fix",
+    "format": "prettier src/ --check",
+    "format:fix": "prettier src/ --write",
+    "validate": "run-p format lint test",
+    "prepare": "husky install"
   },
   "keywords": [],
   "author": "Nick Deakin <nickdeakin83@gmail.com>",
   "license": "ISC",
   "devDependencies": {
+    "@types/compression": "^1.7.2",
+    "@types/cookie-parser": "^1.4.3",
     "@types/express": "^4.17.17",
     "@types/jest": "^29.5.0",
     "@types/node": "^18.15.11",
     "@types/supertest": "^2.0.12",
+    "@typescript-eslint/eslint-plugin": "^5.58.0",
+    "eslint": "^8.38.0",
+    "eslint-config-prettier": "^8.8.0",
+    "eslint-config-ts-important-stuff": "^1.1.0",
+    "eslint-plugin-prettier": "^4.2.1",
+    "husky": "^8.0.3",
     "jest": "^29.5.0",
+    "jest-cli": "^29.5.0",
     "nodemon": "^2.0.22",
     "npm-run-all": "^4.1.5",
+    "prettier": "^2.8.7",
     "rimraf": "^4.4.1",
     "supertest": "^6.3.3",
     "ts-jest": "^29.1.0",
@@ -29,6 +45,8 @@
     "typescript": "^5.0.4"
   },
   "dependencies": {
+    "compression": "^1.7.4",
+    "cookie-parser": "^1.4.6",
     "dotenv": "^16.0.3",
     "express": "^4.18.2"
   }
