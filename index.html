@@ -77,6 +77,31 @@
         .league-tabs {
             margin-bottom: 10px;
         }
+        /* League Table Zones */
+        tr.auto-promotion {
+            background-color: #d4edda; /* Light green */
+            border-top: 2px solid #28a745;
+        }
+        tr.playoff {
+            background-color: #fff3cd; /* Light yellow */
+        }
+        tr.playoff:last-child {
+            border-bottom: 2px solid #ffc107;
+        }
+        tr.relegation {
+            background-color: #f8d7da; /* Light red */
+        }
+        tr.relegation:first-child {
+            border-top: 2px solid #dc3545;
+        }
+        tr.your-team {
+            background-color: #cce5ff; /* Light blue */
+            font-weight: bold;
+        }
+        /* Results Highlight */
+        tr.your-team-result {
+            background-color: #cce5ff;
+        }
     </style>
 </head>
 <body>
@@ -300,6 +325,10 @@
             }
             return future;
         }
+
+        getTodayResults() {
+            return this.history[this.matchDay - 1]?.results ?? [];
+        }
     }
 
     const teamNames = [
@@ -461,7 +490,7 @@
     let currentFutureDay = 0;
     let transferList = [];
     let seasonNumber = 1;
-    let currentResultLeague = 0; // For match day results
+    let currentResultLeague = 0;
 
     function generateTransferList() {
         transferList = [];
@@ -513,25 +542,21 @@
     }
 
     function simulateMatchDay() {
-        let allResults = leagues.map(league => league.simulateMatchDay());
+        leagues.forEach(league => league.simulateMatchDay());
         currentHistoryDay = leagues[yourTeamLeagueIndex].history.length - 1;
-        displayMatchDayResults(allResults);
+        displayMatchDayResults();
         setNextActionButtonText();
     }
 
-    function getTodayResults() {
-        return leagues.map(league => league.history[currentHistoryDay].results)
-    }
-
-    function displayMatchDayResults(allResults) {
+    function displayMatchDayResults() {
         let resultDiv = document.getElementById("match-result");
         let matchDay = leagues[yourTeamLeagueIndex].matchDay;
         resultDiv.innerHTML = `<h3>Season ${seasonNumber} - Match Day ${matchDay} Results:</h3>`;
         resultDiv.innerHTML += `
                 <div class="league-tabs">
-                    <button onclick="currentResultLeague=0;displayMatchDayResults(getTodayResults())">Premier League</button>
-                    <button onclick="currentResultLeague=1;displayMatchDayResults(getTodayResults())">Championship</button>
-                    <button onclick="currentResultLeague=2;displayMatchDayResults(getTodayResults())">League One</button>
+                    <button onclick="currentResultLeague=0;displayMatchDayResults()">Premier League</button>
+                    <button onclick="currentResultLeague=1;displayMatchDayResults()">Championship</button>
+                    <button onclick="currentResultLeague=2;displayMatchDayResults()">League One</button>
                 </div>
             `;
         let tableHTML = `
@@ -546,9 +571,11 @@
                     </thead>
                     <tbody>
             `;
-        allResults[currentResultLeague].forEach(result => {
+        let results = leagues[currentResultLeague].getTodayResults();
+        results.forEach(result => {
+            let isYourTeam = result.homeTeam === "Grok United" || result.awayTeam === "Grok United";
             tableHTML += `
-                    <tr>
+                    <tr ${isYourTeam ? 'class="your-team-result"' : ''}>
                         <td>${result.homeTeam}</td>
                         <td>${result.homeScore} - ${result.awayScore}</td>
                         <td>${result.awayTeam}</td>
@@ -816,8 +843,9 @@
                         <tbody>
                 `;
             day.results.forEach(result => {
+                let isYourTeam = result.homeTeam === "Grok United" || result.awayTeam === "Grok United";
                 contentHTML += `
-                        <tr>
+                        <tr ${isYourTeam ? 'class="your-team-result"' : ''}>
                             <td>${result.homeTeam}</td>
                             <td>${result.homeScore} - ${result.awayScore}</td>
                             <td>${result.awayTeam}</td>
@@ -879,8 +907,9 @@
                 `;
             day.fixtures.forEach(fixture => {
                 const [home, away] = fixture.split(" vs ");
+                let isYourTeam = home === "Grok United" || away === "Grok United";
                 contentHTML += `
-                        <tr>
+                        <tr ${isYourTeam ? 'class="your-team-result"' : ''}>
                             <td>${home}</td>
                             <td>vs</td>
                             <td>${away}</td>
@@ -931,8 +960,18 @@
                     <tbody>
             `;
         standings.forEach((team, index) => {
+            let rowClass = '';
+            if (league.tier < 2) { // Premier League has no promotion
+                if (index < 2) rowClass = 'auto-promotion';
+                else if (index < 6) rowClass = 'playoff';
+                else if (index >= 17) rowClass = 'relegation';
+            } else if (league.tier === 2) { // League One has no relegation
+                if (index < 2) rowClass = 'auto-promotion';
+                else if (index < 6) rowClass = 'playoff';
+            }
+            if (team.name === "Grok United") rowClass = 'your-team';
             tableHTML += `
-                    <tr>
+                    <tr class="${rowClass}">
                         <td><span class="team-link" onclick="showTeamPopup(${index});hideTablePopup()">${team.name}</span></td>
                         <td>${team.played}</td>
                         <td>${team.wins}</td>
