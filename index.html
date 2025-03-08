@@ -74,6 +74,9 @@
             cursor: pointer;
             padding: 0 5px;
         }
+        .league-tabs {
+            margin-bottom: 10px;
+        }
     </style>
 </head>
 <body>
@@ -168,8 +171,8 @@
 
     class Match {
         constructor(team1, team2) {
-            this.team1 = team1; // Home
-            this.team2 = team2; // Away
+            this.team1 = team1;
+            this.team2 = team2;
         }
 
         simulate() {
@@ -458,6 +461,7 @@
     let currentFutureDay = 0;
     let transferList = [];
     let seasonNumber = 1;
+    let currentResultLeague = 0; // For match day results
 
     function generateTransferList() {
         transferList = [];
@@ -509,8 +513,27 @@
     }
 
     function simulateMatchDay() {
+        let allResults = leagues.map(league => league.simulateMatchDay());
+        currentHistoryDay = leagues[yourTeamLeagueIndex].history.length - 1;
+        displayMatchDayResults(allResults);
+        setNextActionButtonText();
+    }
+
+    function getTodayResults() {
+        return leagues.map(league => league.history[currentHistoryDay].results)
+    }
+
+    function displayMatchDayResults(allResults) {
         let resultDiv = document.getElementById("match-result");
-        resultDiv.innerHTML = `<h3>Season ${seasonNumber} - Match Day ${leagues[yourTeamLeagueIndex].matchDay + 1} Results:</h3>`;
+        let matchDay = leagues[yourTeamLeagueIndex].matchDay;
+        resultDiv.innerHTML = `<h3>Season ${seasonNumber} - Match Day ${matchDay} Results:</h3>`;
+        resultDiv.innerHTML += `
+                <div class="league-tabs">
+                    <button onclick="currentResultLeague=0;displayMatchDayResults(getTodayResults())">Premier League</button>
+                    <button onclick="currentResultLeague=1;displayMatchDayResults(getTodayResults())">Championship</button>
+                    <button onclick="currentResultLeague=2;displayMatchDayResults(getTodayResults())">League One</button>
+                </div>
+            `;
         let tableHTML = `
                 <table>
                     <thead>
@@ -523,23 +546,18 @@
                     </thead>
                     <tbody>
             `;
-        leagues.forEach(league => {
-            let results = league.simulateMatchDay();
-            results.forEach(result => {
-                tableHTML += `
-                        <tr>
-                            <td>${result.homeTeam}</td>
-                            <td>${result.homeScore} - ${result.awayScore}</td>
-                            <td>${result.awayTeam}</td>
-                            <td>${result.attendance}</td>
-                        </tr>
-                    `;
-            });
+        allResults[currentResultLeague].forEach(result => {
+            tableHTML += `
+                    <tr>
+                        <td>${result.homeTeam}</td>
+                        <td>${result.homeScore} - ${result.awayScore}</td>
+                        <td>${result.awayTeam}</td>
+                        <td>${result.attendance}</td>
+                    </tr>
+                `;
         });
         tableHTML += `</tbody></table>`;
         resultDiv.innerHTML += tableHTML;
-        currentHistoryDay = leagues[yourTeamLeagueIndex].history.length - 1;
-        setNextActionButtonText();
     }
 
     function setNextActionButtonText() {
@@ -759,14 +777,19 @@
         document.getElementById("popup-overlay").style.display = "none";
     }
 
-    function showHistoryPopup() {
+    function showHistoryPopup(leagueIndex = yourTeamLeagueIndex) {
         let popup = document.getElementById("history-popup");
         let overlay = document.getElementById("popup-overlay");
-        let league = leagues[yourTeamLeagueIndex];
+        let league = leagues[leagueIndex];
         popup.innerHTML = `
                 <div class="popup-header">
                     <h3>Fixture History - ${["Premier League", "Championship", "League One"][league.tier]}</h3>
                     <span class="close-btn" onclick="hideHistoryPopup()">X</span>
+                </div>
+                <div class="league-tabs">
+                    <button onclick="showHistoryPopup(0)">Premier League</button>
+                    <button onclick="showHistoryPopup(1)">Championship</button>
+                    <button onclick="showHistoryPopup(2)">League One</button>
                 </div>
             `;
         let controlsHTML = "";
@@ -776,7 +799,7 @@
             contentHTML = "<p>No matches played yet.</p>";
         } else {
             for (let i = 0; i < league.history.length; i++) {
-                controlsHTML += `<button onclick="currentHistoryDay=${i};showHistoryPopup()">Day ${i + 1}</button>`;
+                controlsHTML += `<button onclick="currentHistoryDay=${i};showHistoryPopup(${leagueIndex})">Day ${i + 1}</button>`;
             }
             let day = league.history[currentHistoryDay];
             contentHTML = `<h4>Match Day ${day.matchDay}:</h4>`;
@@ -815,15 +838,20 @@
         document.getElementById("popup-overlay").style.display = "none";
     }
 
-    function showFixturesPopup() {
+    function showFixturesPopup(leagueIndex = yourTeamLeagueIndex) {
         let popup = document.getElementById("fixtures-popup");
         let overlay = document.getElementById("popup-overlay");
-        let league = leagues[yourTeamLeagueIndex];
+        let league = leagues[leagueIndex];
         let futureFixtures = league.getFutureFixtures();
         popup.innerHTML = `
                 <div class="popup-header">
                     <h3>Future Fixtures - ${["Premier League", "Championship", "League One"][league.tier]}</h3>
                     <span class="close-btn" onclick="hideFixturesPopup()">X</span>
+                </div>
+                <div class="league-tabs">
+                    <button onclick="showFixturesPopup(0)">Premier League</button>
+                    <button onclick="showFixturesPopup(1)">Championship</button>
+                    <button onclick="showFixturesPopup(2)">League One</button>
                 </div>
             `;
         let controlsHTML = "";
@@ -834,7 +862,7 @@
         } else {
             currentFutureDay = Math.min(currentFutureDay, futureFixtures.length - 1);
             for (let i = 0; i < futureFixtures.length; i++) {
-                controlsHTML += `<button onclick="currentFutureDay=${i};showFixturesPopup()">Day ${futureFixtures[i].matchDay}</button>`;
+                controlsHTML += `<button onclick="currentFutureDay=${i};showFixturesPopup(${leagueIndex})">Day ${futureFixtures[i].matchDay}</button>`;
             }
             let day = futureFixtures[currentFutureDay];
             contentHTML = `<h4>Match Day ${day.matchDay}:</h4>`;
@@ -872,15 +900,20 @@
         document.getElementById("popup-overlay").style.display = "none";
     }
 
-    function showTablePopup() {
-        let popup = document.getElementById("table-popup"); // Fixed from team-popup
+    function showTablePopup(leagueIndex = yourTeamLeagueIndex) {
+        let popup = document.getElementById("table-popup");
         let overlay = document.getElementById("popup-overlay");
-        let league = leagues[yourTeamLeagueIndex];
+        let league = leagues[leagueIndex];
         let standings = league.getStandings();
         popup.innerHTML = `
                 <div class="popup-header">
                     <h3>${["Premier League", "Championship", "League One"][league.tier]} Table</h3>
                     <span class="close-btn" onclick="hideTablePopup()">X</span>
+                </div>
+                <div class="league-tabs">
+                    <button onclick="showTablePopup(0)">Premier League</button>
+                    <button onclick="showTablePopup(1)">Championship</button>
+                    <button onclick="showTablePopup(2)">League One</button>
                 </div>
             `;
         let tableHTML = `
