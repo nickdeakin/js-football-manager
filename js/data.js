@@ -79,7 +79,21 @@ const teamNames = [
     'Flare Foxes',
     'Chill Cheetahs',
     'Storm Stallions',
+    // New teams
+    'Magma Mavericks',
+    'Cobalt Comets',
+    'Prism Phantoms',
+    'Aether Archers',
+    'Spectral Swords',
+    'Dynamo Doves',
+    'Zephyr Zebras',
+    'Cosmo Cougars',
+    'Radiant Rams',
+    'Nimbus Navigators',
+    'Blitz Beavers',
+    'Aurora Avengers',
 ];
+// Rest of file (firstNames, lastNames, etc.) unchanged
 
 const firstNames = [
     'Alex',

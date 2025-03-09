@@ -1,3 +1,8 @@
+// Global UI state
+let currentResultLeague = 0; // Default to Premier League
+let currentHistoryDay = 0; // Already existed implicitly, making explicit
+let currentFutureDay = 0; // Already existed implicitly, making explicit
+
 function showTeamPopup(teamIndex) {
     let league = leagues[yourTeamLeagueIndex];
     let team = league.teams[teamIndex];
@@ -237,11 +242,11 @@ function showResultsPopup(leagueIndex = yourTeamLeagueIndex) {
         contentHTML = '<p>No matches played yet.</p>';
     } else {
         for (let i = 0; i < league.history.length; i++) {
-            controlsHTML += `<button onclick="currentHistoryDay=${i};showResultsPopup(${leagueIndex})">Day ${i + 1}</button>`;
+            controlsHTML += `<button onclick="currentHistoryDay=${i};showResultsPopup(${leagueIndex})">Week ${league.history[i].matchDay}</button>`;
         }
         let day = league.history[currentHistoryDay];
         contentHTML = `
-            <h4>Match Day ${day.matchDay}:</h4>
+            <h4>Week ${day.matchDay}:</h4>
             <table>
                 <thead>
                     <tr>
@@ -305,11 +310,11 @@ function showFixturesPopup(leagueIndex = yourTeamLeagueIndex) {
             futureFixtures.length - 1
         );
         for (let i = 0; i < futureFixtures.length; i++) {
-            controlsHTML += `<button onclick="currentFutureDay=${i};showFixturesPopup(${leagueIndex})">Day ${futureFixtures[i].matchDay}</button>`;
+            controlsHTML += `<button onclick="currentFutureDay=${i};showFixturesPopup(${leagueIndex})">Week ${futureFixtures[i].matchDay}</button>`;
         }
         let day = futureFixtures[currentFutureDay];
         contentHTML = `
-            <h4>Match Day ${day.matchDay}:</h4>
+            <h4>Week ${day.matchDay}:</h4>
             <table>
                 <thead>
                     <tr>
@@ -384,7 +389,7 @@ function showTablePopup(leagueIndex = yourTeamLeagueIndex) {
         } else if (league.tier === 1 || league.tier === 2) {
             if (index < 2) rowClass = 'auto-promotion';
             else if (index < 6) rowClass = 'playoff';
-            else if (index >= 17) rowClass = 'relegation';
+            else if (index >= 21) rowClass = 'relegation';
         } else if (league.tier === 3) {
             if (index < 3) rowClass = 'auto-promotion';
             else if (index < 7) rowClass = 'playoff';
@@ -421,10 +426,62 @@ function hideAllPopups() {
     hidePlayerPopup();
 }
 
+// Updated display functions
+function displayMatchDayResults() {
+    let resultDiv = document.getElementById('match-result');
+    let html = `<h3>Season ${seasonNumber} - Week ${currentWeek + 1} (${currentType})</h3>`;
+    html += `<div class="league-tabs">`;
+    leagues.forEach((league, i) => {
+        html += `<button onclick="currentResultLeague=${i};displayMatchDayResults()">${['Premier League', 'Championship', 'League One', 'League Two'][i]}</button>`;
+    });
+    html += `</div>`;
+    let tableHTML = `<table><thead><tr><th>Home Team</th><th>Score</th><th>Away Team</th><th>Attendance</th></tr></thead><tbody>`;
+    let results =
+        leagues[currentResultLeague].history[
+            leagues[currentResultLeague].matchDay - 1
+        ]?.results || [];
+    results.forEach((result) => {
+        let isYourTeam =
+            result.homeTeam === yourTeamName ||
+            result.awayTeam === yourTeamName;
+        tableHTML += `<tr ${isYourTeam ? 'class="your-team-result"' : ''}><td>${result.homeTeam}</td><td>${result.homeScore} - ${result.awayScore}</td><td>${result.awayTeam}</td><td>${result.attendance}</td></tr>`;
+    });
+    tableHTML += `</tbody></table>`;
+    resultDiv.innerHTML = html + tableHTML;
+}
+
+function displayCupResults(results) {
+    let resultDiv = document.getElementById('match-result');
+    let html = `<h3>Season ${seasonNumber} - Week ${currentWeek + 1} (Grok Cup Round ${grokCup.round - 1})</h3>`;
+    let tableHTML = `<table><thead><tr><th>Home Team</th><th>Score</th><th>Away Team</th><th>Attendance</th></tr></thead><tbody>`;
+    results.forEach((result) => {
+        let isYourTeam =
+            result.homeTeam === yourTeamName ||
+            result.awayTeam === yourTeamName;
+        tableHTML += `<tr ${isYourTeam ? 'class="your-team-result"' : ''}><td>${result.homeTeam}</td><td>${result.homeScore} - ${result.awayScore}</td><td>${result.awayTeam}</td><td>${result.attendance}</td></tr>`;
+    });
+    tableHTML += `</tbody></table>`;
+    resultDiv.innerHTML = html + tableHTML;
+}
+
+function displayPostponedResults(results) {
+    let resultDiv = document.getElementById('match-result');
+    let html = `<h3>Season ${seasonNumber} - Week ${currentWeek + 1} (Midweek Postponed Matches)</h3>`;
+    let tableHTML = `<table><thead><tr><th>Home Team</th><th>Score</th><th>Away Team</th><th>Attendance</th></tr></thead><tbody>`;
+    results.forEach((result) => {
+        let isYourTeam =
+            result.homeTeam === yourTeamName ||
+            result.awayTeam === yourTeamName;
+        tableHTML += `<tr ${isYourTeam ? 'class="your-team-result"' : ''}><td>${result.homeTeam}</td><td>${result.homeScore} - ${result.awayScore}</td><td>${result.awayTeam}</td><td>${result.attendance}</td></tr>`;
+    });
+    tableHTML += `</tbody></table>`;
+    resultDiv.innerHTML = html + tableHTML;
+}
+
 // Initial setup
 generateTransferList();
 window.onload = function () {
     document.getElementById('match-result').innerHTML =
         `<h3>Welcome to Football Manager - Season ${seasonNumber}</h3>`;
-    setNextActionButtonText();
+    updateUI(); // Call game.js's updateUI to set button text
 };

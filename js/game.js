@@ -3,89 +3,202 @@ let leagues = [
     new League(
         teamNames.slice(0, 20).map((name) => generateTeam(name, 0)),
         0
-    ),
+    ), // Premier League: 20 teams
     new League(
-        teamNames.slice(20, 40).map((name) => generateTeam(name, 1)),
+        teamNames.slice(20, 44).map((name) => generateTeam(name, 1)),
         1
-    ),
+    ), // Championship: 24 teams
     new League(
-        teamNames.slice(40, 60).map((name) => generateTeam(name, 2)),
+        teamNames.slice(44, 68).map((name) => generateTeam(name, 2)),
         2
-    ),
+    ), // League One: 24 teams
     new League(
-        teamNames.slice(60, 80).map((name) => generateTeam(name, 3)),
+        teamNames.slice(68, 92).map((name) => generateTeam(name, 3)),
         3
-    ),
+    ), // League Two: 24 teams
 ];
 let yourTeamLeagueIndex = 0;
-let currentHistoryDay = 0;
-let currentFutureDay = 0;
-let transferList = [];
+let currentWeek = 0; // 0-51 (52 weeks)
+let currentType = 'weekend'; // "weekend" or "midweek"
 let seasonNumber = 1;
-let currentResultLeague = 0;
+let transferList = [];
+let grokCup = null; // Will hold the cup competition
+let postponedLeagueMatches = []; // [ { leagueIndex, team1Index, team2Index, week } ]
 
-function nextAction() {
-    if (leagues.every((league) => league.isSeasonOver())) {
-        newSeason();
-    } else {
-        simulateMatchDay();
+// Grok Cup setup
+function initializeGrokCup() {
+    let allTeams = leagues.flatMap((league) => league.teams);
+    grokCup = {
+        teams: allTeams.slice(), // 92 teams
+        round: 1,
+        fixtures: [],
+        results: [],
+    };
+    scheduleGrokCupRound(1);
+}
+
+// Schedule a Grok Cup round
+function scheduleGrokCupRound(round) {
+    let teams = grokCup.teams;
+    if (teams.length <= 1) return;
+
+    grokCup.fixtures = [];
+    let cupWeek = { 1: 1, 2: 8, 3: 16, 4: 24, 5: 32, 6: 40 }[round];
+
+    // Shuffle teams
+    for (let i = teams.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [teams[i], teams[j]] = [teams[j], teams[i]];
+    }
+
+    // Pair teams, handle byes if odd number
+    for (let i = 0; i < teams.length; i += 2) {
+        if (i + 1 < teams.length) {
+            grokCup.fixtures.push({
+                team1: teams[i],
+                team2: teams[i + 1],
+                week: cupWeek,
+            });
+        } else {
+            grokCup.fixtures.push({
+                team1: teams[i],
+                team2: null,
+                week: cupWeek,
+            }); // Bye
+        }
     }
 }
 
-function simulateMatchDay() {
-    leagues.forEach((league) => league.simulateMatchDay());
-    currentHistoryDay = leagues[yourTeamLeagueIndex].history.length - 1;
-    displayMatchDayResults();
-    setNextActionButtonText();
-}
+// Simulate Grok Cup matches for the current week
+function simulateGrokCupMatches(week) {
+    let currentFixtures = grokCup.fixtures.filter((f) => f.week === week);
+    if (currentFixtures.length === 0) return [];
 
-function displayMatchDayResults() {
-    let resultDiv = document.getElementById('match-result');
-    let matchDay = leagues[yourTeamLeagueIndex].matchDay;
-    resultDiv.innerHTML = `<h3>Season ${seasonNumber} - Match Day ${matchDay} Results:</h3>`;
-    resultDiv.innerHTML += `
-        <div class="league-tabs">
-            <button onclick="currentResultLeague=0;displayMatchDayResults()">Premier League</button>
-            <button onclick="currentResultLeague=1;displayMatchDayResults()">Championship</button>
-            <button onclick="currentResultLeague=2;displayMatchDayResults()">League One</button>
-            <button onclick="currentResultLeague=3;displayMatchDayResults()">League Two</button>
-        </div>
-    `;
-    let tableHTML = `
-        <table>
-            <thead>
-                <tr>
-                    <th>Home Team</th>
-                    <th>Score</th>
-                    <th>Away Team</th>
-                    <th>Attendance</th>
-                </tr>
-            </thead>
-            <tbody>
-    `;
-    let results = leagues[currentResultLeague].getTodayResults();
-    results.forEach((result) => {
-        let isYourTeam =
-            result.homeTeam === yourTeamName ||
-            result.awayTeam === yourTeamName;
-        tableHTML += `
-            <tr ${isYourTeam ? 'class="your-team-result"' : ''}>
-                <td>${result.homeTeam}</td>
-                <td>${result.homeScore} - ${result.awayScore}</td>
-                <td>${result.awayTeam}</td>
-                <td>${result.attendance}</td>
-            </tr>
-        `;
+    let results = [];
+    let nextRoundTeams = [];
+    currentFixtures.forEach((fixture) => {
+        if (fixture.team2 === null) {
+            nextRoundTeams.push(fixture.team1); // Bye
+            results.push({
+                homeTeam: fixture.team1.name,
+                awayTeam: 'Bye',
+                homeScore: '-',
+                awayScore: '-',
+                attendance: 0,
+            });
+        } else {
+            let match = new Match(fixture.team1, fixture.team2);
+            let result = match.simulate();
+            results.push(result);
+            let winner =
+                result.homeScore > result.awayScore
+                    ? fixture.team1
+                    : fixture.team2;
+            nextRoundTeams.push(winner);
+        }
     });
-    tableHTML += `</tbody></table>`;
-    resultDiv.innerHTML += tableHTML;
+
+    grokCup.results.push({
+        round: grokCup.round,
+        week: week,
+        matches: results,
+    });
+    grokCup.teams = nextRoundTeams;
+    grokCup.round++;
+    if (grokCup.teams.length > 1) scheduleGrokCupRound(grokCup.round);
+
+    return results;
 }
 
-function setNextActionButtonText() {
-    const button = document.getElementById('next-action-button');
-    button.innerText = leagues.every((league) => league.isSeasonOver())
-        ? 'Next Season'
-        : 'Next Match Day';
+function nextAction() {
+    currentWeek++;
+    if (currentWeek > 51) {
+        if (
+            leagues.every(
+                (league) => league.matchDay >= league.matchDays.length
+            ) &&
+            grokCup.teams.length <= 1
+        ) {
+            newSeason();
+            return;
+        }
+        currentWeek = 0; // Loop back if season not over
+    }
+
+    if (currentType === 'weekend') {
+        simulateWeekend();
+        currentType = 'midweek';
+    } else {
+        simulateMidweek();
+        currentType = 'weekend';
+    }
+    updateUI();
+}
+
+function simulateWeekend() {
+    let cupWeek = [1, 8, 16, 24, 32, 40].includes(currentWeek);
+    if (cupWeek) {
+        let cupResults = simulateGrokCupMatches(currentWeek);
+        displayCupResults(cupResults);
+        postponeLeagueMatches(currentWeek);
+    } else {
+        leagues.forEach((league, index) => {
+            if (league.matchDay < league.matchDays.length) {
+                league.simulateMatchDay();
+            }
+        });
+        displayMatchDayResults();
+    }
+}
+
+function simulateMidweek() {
+    let postponed = postponedLeagueMatches.filter(
+        (m) => m.week === currentWeek
+    );
+    if (postponed.length > 0) {
+        let results = [];
+        postponed.forEach((match) => {
+            let league = leagues[match.leagueIndex];
+            let team1 = league.teams[match.team1Index];
+            let team2 = league.teams[match.team2Index];
+            let sim = new Match(team1, team2).simulate();
+            results.push(sim);
+        });
+        postponedLeagueMatches = postponedLeagueMatches.filter(
+            (m) => m.week !== currentWeek
+        );
+        displayPostponedResults(results);
+    }
+}
+
+function postponeLeagueMatches(week) {
+    leagues.forEach((league, leagueIndex) => {
+        if (league.matchDay < league.matchDays.length) {
+            let fixtures = league.matchDays[league.matchDay];
+            fixtures.forEach(([team1, team2], i) => {
+                if (
+                    grokCup.fixtures.some(
+                        (f) =>
+                            f.week === week &&
+                            (f.team1 === team1 ||
+                                f.team2 === team1 ||
+                                f.team1 === team2 ||
+                                f.team2 === team2)
+                    )
+                ) {
+                    postponedLeagueMatches.push({
+                        leagueIndex,
+                        team1Index: league.teams.indexOf(team1),
+                        team2Index: league.teams.indexOf(team2),
+                        week: week + 1,
+                    });
+                } else {
+                    new Match(team1, team2).simulate(); // Play non-clashing matches
+                }
+            });
+            league.matchDay++;
+        }
+    });
 }
 
 function newSeason() {
@@ -97,38 +210,26 @@ function newSeason() {
                       50, 45, 40, 35, 30, 28, 26, 24, 22, 20, 18, 16, 14, 12,
                       10, 9, 8, 7, 6, 5,
                   ]
-                : league.tier === 1
-                  ? [
-                        20, 18, 16, 14, 12, 10, 9, 8, 7, 6, 5, 4, 3, 2.5, 2,
-                        1.8, 1.6, 1.4, 1.2, 1,
-                    ]
-                  : league.tier === 2
-                    ? [
-                          10, 9, 8, 7, 6, 5, 4.5, 4, 3.5, 3, 2.5, 2, 1.8, 1.6,
-                          1.4, 1.2, 1, 0.9, 0.8, 0.7,
-                      ]
-                    : [
-                          5, 4.5, 4, 3.5, 3, 2.5, 2, 1.8, 1.6, 1.4, 1.2, 1, 0.9,
-                          0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2,
-                      ];
+                : [
+                      20, 18, 16, 14, 12, 10, 9, 8, 7, 6, 5, 4, 3, 2.5, 2, 1.8,
+                      1.6, 1.4, 1.2, 1, 0.8, 0.6, 0.4, 0.2,
+                  ];
         standings.forEach((team, index) => {
-            team.budget += prizeMoney[index];
+            team.budget += prizeMoney[index] || 0;
             team.points = 0;
             team.played = 0;
             team.wins = 0;
             team.draws = 0;
             team.losses = 0;
-
             let retirees = [];
-            team.players.forEach((player, index) => {
+            team.players.forEach((player, i) => {
                 player.age += 1;
                 player.value = calculateValue(player.skills, player.age);
-                if (player.age > 35) retirees.push(index);
+                if (player.age > 35) retirees.push(i);
             });
             for (let i = retirees.length - 1; i >= 0; i--) {
-                let retiredPlayer = team.removePlayer(retirees[i]);
-                let youth = generateYouthPlayer(retiredPlayer.position);
-                team.addPlayer(youth);
+                let retired = team.removePlayer(retirees[i]);
+                team.addPlayer(generateYouthPlayer(retired.position));
             }
         });
 
@@ -145,9 +246,9 @@ function newSeason() {
             leagues[1].teams = promoted
                 .filter((t) => !autoPromoted.includes(t) && t !== playoffWinner)
                 .concat(relegated);
-        } else if (league.tier === 1) {
+        } else if (league.tier === 1 || league.tier === 2) {
             let relegated = standings.slice(-3);
-            let promoted = leagues[2].getStandings();
+            let promoted = leagues[league.tier + 1].getStandings();
             let autoPromoted = promoted.slice(0, 2);
             let playoffTeams = promoted.slice(2, 6);
             let playoffWinner = simulatePlayoff(playoffTeams);
@@ -155,22 +256,11 @@ function newSeason() {
                 .slice(0, -3)
                 .concat(autoPromoted)
                 .concat([playoffWinner]);
-            leagues[2].teams = promoted
+            leagues[league.tier + 1].teams = promoted
                 .filter((t) => !autoPromoted.includes(t) && t !== playoffWinner)
                 .concat(relegated);
-        } else if (league.tier === 2) {
-            let relegated = standings.slice(-3);
-            let promoted = leagues[3].getStandings();
-            let autoPromoted = promoted.slice(0, 3);
-            let playoffTeams = promoted.slice(3, 7);
-            let playoffWinner = simulatePlayoff(playoffTeams);
-            league.teams = standings
-                .slice(0, -3)
-                .concat(autoPromoted)
-                .concat([playoffWinner]);
-            leagues[3].teams = promoted
-                .filter((t) => !autoPromoted.includes(t) && t !== playoffWinner)
-                .concat(relegated);
+        } else if (league.tier === 3) {
+            league.teams = standings; // No relegation from League Two
         }
     });
 
@@ -182,12 +272,29 @@ function newSeason() {
         league.history = [];
         league.matchDays = league.generateMatchDays();
     });
-    currentHistoryDay = 0;
-    currentFutureDay = 0;
-    generateTransferList();
+    currentWeek = 0;
+    currentType = 'weekend';
     seasonNumber++;
-    let resultDiv = document.getElementById('match-result');
-    resultDiv.innerHTML = `<h3>Season ${seasonNumber} Started!</h3>`;
+    grokCup = null;
+    postponedLeagueMatches = [];
+    initializeGrokCup();
+    document.getElementById('match-result').innerHTML =
+        `<h3>Season ${seasonNumber} Started!</h3>`;
     hideAllPopups();
-    setNextActionButtonText();
+    updateUI();
 }
+
+function updateUI() {
+    let button = document.getElementById('next-action-button');
+    button.innerText = `Next ${currentType === 'weekend' ? 'Weekend' : 'Midweek'} (Week ${currentWeek + 1})`;
+    if (
+        currentWeek === 51 &&
+        leagues.every((league) => league.matchDay >= league.matchDays.length) &&
+        grokCup.teams.length <= 1
+    ) {
+        button.innerText = 'Next Season';
+    }
+}
+
+// Initial setup
+initializeGrokCup();
