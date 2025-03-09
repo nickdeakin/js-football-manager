@@ -31,6 +31,23 @@
         tr:nth-child(odd) {
             background-color: #ffffff;
         }
+        .two-column {
+            display: grid;
+            grid-template-columns: 50% 50%; /* Two columns, each 50% */
+            grid-template-rows: auto auto; /* Two rows */
+            gap: 16px; /* Adjust the gap between grid items if needed */
+        }
+
+        .league-table tr td {
+            width: 10%;
+        }
+        .league-table tr td:nth-child(1) {
+            width: 50%;
+        }
+        .vertical-table tr td:nth-child(1) {
+            width: 50%;
+        }
+
         .team-link, .player-link {
             cursor: pointer;
             color: blue;
@@ -760,7 +777,7 @@
                     </thead>
                     <tbody>
                         <tr>
-                            <td colspan="6"><h4>Starting XI:</h4></td>
+                            <td colspan="6"><h4>Starting XI</h4></td>
                         </tr>
             `;
         team.players.slice(0, 11).forEach((player, index) => {
@@ -778,7 +795,7 @@
 
         html += `
                         <tr>
-                            <td colspan="6"><h4>Substitutes:</h4></td>
+                            <td colspan="6"><h4>Substitutes</h4></td>
                         </tr>
             `;
         team.players.slice(11, 16).forEach((player, index) => {
@@ -796,7 +813,7 @@
 
         html += `
                         <tr>
-                            <td colspan="6"><h4>Reserves:</h4></td>
+                            <td colspan="6"><h4>Reserves</h4></td>
                         </tr>
             `;
         team.players.slice(16).forEach((player, index) => {
@@ -893,33 +910,60 @@
                     <h3>${player.name}</h3>
                     <span class="close-btn" onclick="hidePlayerPopup()">X</span>
                 </div>
-                <p><strong>Age:</strong> ${player.age}</p>
-                <p><strong>Nationality:</strong> ${player.nationality}</p>
-                <p><strong>Position:</strong> ${player.position}</p>
-                <p><strong>Value:</strong> £${player.value}M</p>
-                <p><strong>Wage:</strong> £${player.wage}K</p>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Passing</th>
-                            <th>Tackling</th>
-                            <th>Pace</th>
-                            <th>Heading</th>
-                            <th>Stamina</th>
-                            <th>Shooting</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td>${player.skills.passing}</td>
-                            <td>${player.skills.tackling}</td>
-                            <td>${player.skills.pace}</td>
-                            <td>${player.skills.heading}</td>
-                            <td>${player.skills.stamina}</td>
-                            <td>${player.skills.shooting}</td>
-                        </tr>
-                    </tbody>
-                </table>
+                <div class="two-column">
+                    <table class="vertical-table">
+                        <tbody>
+                            <tr>
+                                <td>Current team</td>
+                                <td>${leagues[yourTeamLeagueIndex].teams[teamIndex].name}</td>
+                             </tr>
+                            <tr>
+                                <td>Age</td>
+                                <td>${player.age}</td>
+                             </tr>
+                            <tr>
+                                <td>Nationality</td>
+                                <td>${player.nationality}</td>
+                             </tr>
+                            <tr>
+                                <td>Position</td>
+                                <td>${player.position}</td>
+                             </tr>
+                            <tr>
+                                <td>Value</td>
+                                <td>${player.value}M</td>
+                             </tr>
+                            <tr>
+                                <td>Wage</td>
+                                <td>${player.wage}K</td>
+                             </tr>
+                         </tbody>
+                    </table>
+
+                    <table class="vertical-table">
+                        <tbody>
+                            <tr>
+                                <td>Passing</td>
+                                <td>${player.skills.passing}</td>
+                             </tr>
+                                <td>Tackling</td>
+                                <td>${player.skills.tackling}</td>
+                             </tr>
+                                <td>Pace</td>
+                                <td>${player.skills.pace}</td>
+                             </tr>
+                                <td>Heading</td>
+                                <td>${player.skills.heading}</td>
+                             </tr>
+                                <td>Stamina</td>
+                                <td>${player.skills.stamina}</td>
+                             </tr>
+                                <td>Shooting</td>
+                                <td>${player.skills.shooting}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
             `;
         if (isYourTeam) {
             html += `<button onclick="sellPlayerFromPopup(${teamIndex}, ${playerIndex});hidePlayerPopup()">Sell Player</button>`;
@@ -1019,7 +1063,7 @@
         document.getElementById("popup-overlay").style.display = "none";
     }
 
-    function showFixturesPopup( MPGleagueIndex = yourTeamLeagueIndex) {
+    function showFixturesPopup( leagueIndex = yourTeamLeagueIndex) {
         let popup = document.getElementById("fixtures-popup");
         let overlay = document.getElementById("popup-overlay");
         let league = leagues[leagueIndex];
@@ -1101,7 +1145,7 @@
                 </div>
             `;
         let tableHTML = `
-                <table>
+                <table class="league-table">
                     <thead>
                         <tr>
                             <th>Team</th>
