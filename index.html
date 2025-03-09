@@ -31,12 +31,12 @@
         tr:nth-child(odd) {
             background-color: #ffffff;
         }
-        .team-link {
+        .team-link, .player-link {
             cursor: pointer;
             color: blue;
             text-decoration: underline;
         }
-        #team-popup, #transfer-popup, #history-popup, #fixtures-popup, #table-popup {
+        #team-popup, #transfer-popup, #history-popup, #fixtures-popup, #table-popup, #player-popup {
             display: none;
             position: fixed;
             top: 50%;
@@ -77,44 +77,42 @@
         .league-tabs {
             margin-bottom: 10px;
         }
-        /* League Table Zones */
         tr.champions {
-            background-color: #ffd700; /* Gold */
+            background-color: #ffd700;
             border-top: 2px solid #b8860b;
         }
         tr.euro-league {
-            background-color: #d4edda; /* Light green */
+            background-color: #d4edda;
         }
         tr.euro-league:last-child {
             border-bottom: 2px solid #28a745;
         }
         tr.secondary-euro {
-            background-color: #cce5ff; /* Light blue */
+            background-color: #cce5ff;
         }
         tr.secondary-euro:last-child {
             border-bottom: 2px solid #007bff;
         }
         tr.auto-promotion {
-            background-color: #d4edda; /* Light green */
+            background-color: #d4edda;
             border-top: 2px solid #28a745;
         }
         tr.playoff {
-            background-color: #fff3cd; /* Light yellow */
+            background-color: #fff3cd;
         }
         tr.playoff:last-child {
             border-bottom: 2px solid #ffc107;
         }
         tr.relegation {
-            background-color: #f8d7da; /* Light red */
+            background-color: #f8d7da;
         }
         tr.relegation:first-child {
             border-top: 2px solid #dc3545;
         }
         tr.your-team {
-            background-color: #e6ccff; /* Light purple */
+            background-color: #e6ccff;
             font-weight: bold;
         }
-        /* Results Highlight */
         tr.your-team-result {
             background-color: #e6ccff;
         }
@@ -137,17 +135,23 @@
 <div id="history-popup"></div>
 <div id="fixtures-popup"></div>
 <div id="table-popup"></div>
+<div id="player-popup"></div>
 
 <script>
     // Game Logic
     class Player {
-        constructor(name, position, skill, value, wage, age) {
+        constructor(name, position, skills, value, wage, age, nationality) {
             this.name = name;
             this.position = position;
-            this.skill = skill;
+            this.skills = skills; // { passing, tackling, pace, heading, stamina, shooting }
             this.value = value;
             this.wage = wage;
             this.age = age;
+            this.nationality = nationality;
+        }
+
+        getAverageSkill() {
+            return Object.values(this.skills).reduce((sum, val) => sum + val, 0) / 6;
         }
     }
 
@@ -184,7 +188,7 @@
 
         getTeamSkill() {
             let startingXI = this.players.slice(0, 11);
-            let totalSkill = startingXI.reduce((sum, player) => sum + player.skill, 0);
+            let totalSkill = startingXI.reduce((sum, player) => sum + player.getAverageSkill(), 0);
             return totalSkill / startingXI.length || 0;
         }
 
@@ -200,8 +204,8 @@
             let positionPlayers = startingXI.filter(p => p.position === newPlayer.position);
             if (positionPlayers.length === 0) return;
 
-            let weakestPlayer = positionPlayers.reduce((min, p) => p.skill < min.skill ? p : min, positionPlayers[0]);
-            if (newPlayer.skill > weakestPlayer.skill) {
+            let weakestPlayer = positionPlayers.reduce((min, p) => p.getAverageSkill() < min.getAverageSkill() ? p : min, positionPlayers[0]);
+            if (newPlayer.getAverageSkill() > weakestPlayer.getAverageSkill()) {
                 let weakestIndex = startingXI.indexOf(weakestPlayer);
                 this.players.splice(this.players.length - 1, 1);
                 this.players.splice(weakestIndex, 1, newPlayer);
@@ -375,6 +379,10 @@
         "Smith", "Johnson", "Brown", "Taylor", "Wilson", "Davis", "Clark", "Lewis",
         "Walker", "Hall", "Young", "King", "Wright", "Hill", "Scott", "Green"
     ];
+    const nationalities = [
+        "England", "Spain", "Germany", "France", "Italy", "Brazil", "Argentina", "Portugal",
+        "Netherlands", "Belgium", "Scotland", "Wales", "Ireland", "Sweden", "Norway"
+    ];
 
     const formations = [
         { name: "4-4-2", gk: 1, def: 4, mid: 4, fwd: 2 },
@@ -383,15 +391,28 @@
         { name: "4-2-3-1", gk: 1, def: 4, mid: 5, fwd: 1 }
     ];
 
-    function calculateValue(skill, age) {
-        let baseValue = (skill - 40) * 0.5;
+    function calculateValue(skills, age) {
+        let avgSkill = Object.values(skills).reduce((sum, val) => sum + val, 0) / 6;
+        let baseValue = (avgSkill - 40) * 0.5;
         let ageMultiplier = age < 25 ? (0.5 + (age - 18) * 0.0714) :
             age <= 30 ? 1.0 :
                 (1.0 - (age - 30) * 0.0714);
         return Math.max(baseValue * ageMultiplier, 0).toFixed(1);
     }
-    function calculateWage(skill) {
-        return (skill - 40) * 2;
+    function calculateWage(skills) {
+        let avgSkill = Object.values(skills).reduce((sum, val) => sum + val, 0) / 6;
+        return Math.floor((avgSkill - 40) * 2);
+    }
+
+    function generateSkills(min, max) {
+        return {
+            passing: Math.floor(Math.random() * (max - min + 1)) + min,
+            tackling: Math.floor(Math.random() * (max - min + 1)) + min,
+            pace: Math.floor(Math.random() * (max - min + 1)) + min,
+            heading: Math.floor(Math.random() * (max - min + 1)) + min,
+            stamina: Math.floor(Math.random() * (max - min + 1)) + min,
+            shooting: Math.floor(Math.random() * (max - min + 1)) + min
+        };
     }
 
     function generateTeam(name, leagueTier) {
@@ -406,107 +427,126 @@
         team.addPlayer(new Player(
             `${firstNames[Math.floor(Math.random() * firstNames.length)]} ${lastNames[Math.floor(Math.random() * lastNames.length)]}`,
             "Goalkeeper",
-            Math.floor(Math.random() * 41) + 60,
+            generateSkills(60, 100),
             0,
-            calculateWage(Math.floor(Math.random() * 41) + 60),
-            Math.floor(Math.random() * 18) + 18
+            0,
+            Math.floor(Math.random() * 18) + 18,
+            nationalities[Math.floor(Math.random() * nationalities.length)]
         ));
-        team.players[0].value = calculateValue(team.players[0].skill, team.players[0].age);
+        team.players[0].value = calculateValue(team.players[0].skills, team.players[0].age);
+        team.players[0].wage = calculateWage(team.players[0].skills);
         for (let i = 0; i < formation.def; i++) {
-            let skill = Math.floor(Math.random() * 41) + 60;
+            let skills = generateSkills(60, 100);
             let age = Math.floor(Math.random() * 18) + 18;
             team.addPlayer(new Player(
                 `${firstNames[Math.floor(Math.random() * firstNames.length)]} ${lastNames[Math.floor(Math.random() * lastNames.length)]}`,
                 "Defender",
-                skill,
-                calculateValue(skill, age),
-                calculateWage(skill),
-                age
+                skills,
+                calculateValue(skills, age),
+                calculateWage(skills),
+                age,
+                nationalities[Math.floor(Math.random() * nationalities.length)]
             ));
         }
         for (let i = 0; i < formation.mid; i++) {
-            let skill = Math.floor(Math.random() * 41) + 60;
+            let skills = generateSkills(60, 100);
             let age = Math.floor(Math.random() * 18) + 18;
             team.addPlayer(new Player(
                 `${firstNames[Math.floor(Math.random() * firstNames.length)]} ${lastNames[Math.floor(Math.random() * lastNames.length)]}`,
                 "Midfielder",
-                skill,
-                calculateValue(skill, age),
-                calculateWage(skill),
-                age
+                skills,
+                calculateValue(skills, age),
+                calculateWage(skills),
+                age,
+                nationalities[Math.floor(Math.random() * nationalities.length)]
             ));
         }
         for (let i = 0; i < formation.fwd; i++) {
-            let skill = Math.floor(Math.random() * 41) + 60;
+            let skills = generateSkills(60, 100);
             let age = Math.floor(Math.random() * 18) + 18;
             team.addPlayer(new Player(
                 `${firstNames[Math.floor(Math.random() * firstNames.length)]} ${lastNames[Math.floor(Math.random() * lastNames.length)]}`,
                 "Forward",
-                skill,
-                calculateValue(skill, age),
-                calculateWage(skill),
-                age
+                skills,
+                calculateValue(skills, age),
+                calculateWage(skills),
+                age,
+                nationalities[Math.floor(Math.random() * nationalities.length)]
             ));
         }
 
-        let subSkills = [50, 85];
+        let subSkillsRange = [50, 85];
         team.addPlayer(new Player(
             `${firstNames[Math.floor(Math.random() * firstNames.length)]} ${lastNames[Math.floor(Math.random() * lastNames.length)]}`,
             "Goalkeeper",
-            Math.floor(Math.random() * (subSkills[1] - subSkills[0] + 1)) + subSkills[0],
-            0, calculateWage(Math.floor(Math.random() * 36) + 50), Math.floor(Math.random() * 18) + 18
+            generateSkills(subSkillsRange[0], subSkillsRange[1]),
+            0,
+            0,
+            Math.floor(Math.random() * 18) + 18,
+            nationalities[Math.floor(Math.random() * nationalities.length)]
         ));
-        team.players[team.players.length - 1].value = calculateValue(team.players[team.players.length - 1].skill, team.players[team.players.length - 1].age);
+        team.players[team.players.length - 1].value = calculateValue(team.players[team.players.length - 1].skills, team.players[team.players.length - 1].age);
+        team.players[team.players.length - 1].wage = calculateWage(team.players[team.players.length - 1].skills);
         for (let i = 0; i < 2; i++) {
-            let skill = Math.floor(Math.random() * (subSkills[1] - subSkills[0] + 1)) + subSkills[0];
+            let skills = generateSkills(subSkillsRange[0], subSkillsRange[1]);
             let age = Math.floor(Math.random() * 18) + 18;
             team.addPlayer(new Player(
                 `${firstNames[Math.floor(Math.random() * firstNames.length)]} ${lastNames[Math.floor(Math.random() * lastNames.length)]}`,
                 "Defender",
-                skill,
-                calculateValue(skill, age),
-                calculateWage(skill),
-                age
+                skills,
+                calculateValue(skills, age),
+                calculateWage(skills),
+                age,
+                nationalities[Math.floor(Math.random() * nationalities.length)]
             ));
         }
         team.addPlayer(new Player(
             `${firstNames[Math.floor(Math.random() * firstNames.length)]} ${lastNames[Math.floor(Math.random() * lastNames.length)]}`,
             "Midfielder",
-            Math.floor(Math.random() * (subSkills[1] - subSkills[0] + 1)) + subSkills[0],
-            0, calculateWage(Math.floor(Math.random() * 36) + 50), Math.floor(Math.random() * 18) + 18
+            generateSkills(subSkillsRange[0], subSkillsRange[1]),
+            0,
+            0,
+            Math.floor(Math.random() * 18) + 18,
+            nationalities[Math.floor(Math.random() * nationalities.length)]
         ));
-        team.players[team.players.length - 1].value = calculateValue(team.players[team.players.length - 1].skill, team.players[team.players.length - 1].age);
+        team.players[team.players.length - 1].value = calculateValue(team.players[team.players.length - 1].skills, team.players[team.players.length - 1].age);
+        team.players[team.players.length - 1].wage = calculateWage(team.players[team.players.length - 1].skills);
         team.addPlayer(new Player(
             `${firstNames[Math.floor(Math.random() * firstNames.length)]} ${lastNames[Math.floor(Math.random() * lastNames.length)]}`,
             "Forward",
-            Math.floor(Math.random() * (subSkills[1] - subSkills[0] + 1)) + subSkills[0],
-            0, calculateWage(Math.floor(Math.random() * 36) + 50), Math.floor(Math.random() * 18) + 18
+            generateSkills(subSkillsRange[0], subSkillsRange[1]),
+            0,
+            0,
+            Math.floor(Math.random() * 18) + 18,
+            nationalities[Math.floor(Math.random() * nationalities.length)]
         ));
-        team.players[team.players.length - 1].value = calculateValue(team.players[team.players.length - 1].skill, team.players[team.players.length - 1].age);
+        team.players[team.players.length - 1].value = calculateValue(team.players[team.players.length - 1].skills, team.players[team.players.length - 1].age);
+        team.players[team.players.length - 1].wage = calculateWage(team.players[team.players.length - 1].skills);
 
         for (let i = 0; i < 3; i++) {
             let randomPosition = ["Goalkeeper", "Defender", "Midfielder", "Forward"][Math.floor(Math.random() * 4)];
-            let skill = Math.floor(Math.random() * 31) + 40;
+            let skills = generateSkills(40, 70);
             let age = Math.floor(Math.random() * 18) + 18;
             team.addPlayer(new Player(
                 `${firstNames[Math.floor(Math.random() * firstNames.length)]} ${lastNames[Math.floor(Math.random() * lastNames.length)]}`,
                 randomPosition,
-                skill,
-                calculateValue(skill, age),
-                calculateWage(skill),
-                age
+                skills,
+                calculateValue(skills, age),
+                calculateWage(skills),
+                age,
+                nationalities[Math.floor(Math.random() * nationalities.length)]
             ));
         }
 
         return team;
     }
 
-    const yourTeamName = "Grok United"; // Global variable for your team
+    const yourTeamName = "Grok United";
     let leagues = [
         new League(teamNames.slice(0, 20).map(name => generateTeam(name, 0)), 0),
         new League(teamNames.slice(20, 40).map(name => generateTeam(name, 1)), 1),
         new League(teamNames.slice(40, 60).map(name => generateTeam(name, 2)), 2),
-        new League(teamNames.slice(60, 80).map(name => generateTeam(name, 3)), 3) // League Two
+        new League(teamNames.slice(60, 80).map(name => generateTeam(name, 3)), 3)
     ];
     let yourTeamLeagueIndex = 0;
     let currentHistoryDay = 0;
@@ -519,30 +559,32 @@
         transferList = [];
         const positions = ["Goalkeeper", "Defender", "Midfielder", "Forward"];
         for (let i = 0; i < 10; i++) {
-            let skill = Math.floor(Math.random() * 61) + 40;
+            let skills = generateSkills(40, 100);
             let position = positions[Math.floor(Math.random() * positions.length)];
             let age = Math.floor(Math.random() * 18) + 18;
             transferList.push(new Player(
                 `${firstNames[Math.floor(Math.random() * firstNames.length)]} ${lastNames[Math.floor(Math.random() * lastNames.length)]}`,
                 position,
-                skill,
-                calculateValue(skill, age),
-                calculateWage(skill),
-                age
+                skills,
+                calculateValue(skills, age),
+                calculateWage(skills),
+                age,
+                nationalities[Math.floor(Math.random() * nationalities.length)]
             ));
         }
     }
 
     function generateYouthPlayer(position) {
-        let skill = Math.floor(Math.random() * 31) + 50;
+        let skills = generateSkills(50, 80);
         let age = 18;
         return new Player(
             `${firstNames[Math.floor(Math.random() * firstNames.length)]} ${lastNames[Math.floor(Math.random() * lastNames.length)]}`,
             position,
-            skill,
-            calculateValue(skill, age),
-            calculateWage(skill),
-            age
+            skills,
+            calculateValue(skills, age),
+            calculateWage(skills),
+            age,
+            nationalities[Math.floor(Math.random() * nationalities.length)]
         );
     }
 
@@ -634,7 +676,7 @@
                 let retirees = [];
                 team.players.forEach((player, index) => {
                     player.age += 1;
-                    player.value = calculateValue(player.skill, player.age);
+                    player.value = calculateValue(player.skills, player.age);
                     if (player.age > 35) retirees.push(index);
                 });
                 for (let i = retirees.length - 1; i >= 0; i--) {
@@ -663,8 +705,8 @@
             } else if (league.tier === 2) {
                 let relegated = standings.slice(-3);
                 let promoted = leagues[3].getStandings();
-                let autoPromoted = promoted.slice(0, 3); // 3 auto-promotion for League Two
-                let playoffTeams = promoted.slice(3, 7); // 4 playoff teams (4th-7th)
+                let autoPromoted = promoted.slice(0, 3);
+                let playoffTeams = promoted.slice(3, 7);
                 let playoffWinner = simulatePlayoff(playoffTeams);
                 league.teams = standings.slice(0, -3).concat(autoPromoted).concat([playoffWinner]);
                 leagues[3].teams = promoted.filter(t => !autoPromoted.includes(t) && t !== playoffWinner).concat(relegated);
@@ -710,66 +752,62 @@
                         <tr>
                             <th>Name</th>
                             <th>Position</th>
-                            <th>Skill</th>
+                            <th>Avg Skill</th>
                             <th>Age</th>
                             <th>Value</th>
                             <th>Wage</th>
-                            ${teamIndex === 0 ? '<th>Action</th>' : ''}
                         </tr>
                     </thead>
                     <tbody>
                         <tr>
-                            <td colspan="${teamIndex === 0 ? 7 : 6}"><h4>Starting XI:</h4></td>
+                            <td colspan="6"><h4>Starting XI:</h4></td>
                         </tr>
             `;
         team.players.slice(0, 11).forEach((player, index) => {
             html += `
                     <tr>
-                        <td>${player.name}</td>
+                        <td><span class="player-link" onclick="showPlayerPopup('team', ${teamIndex}, ${index})">${player.name}</span></td>
                         <td>${player.position}</td>
-                        <td>${player.skill}</td>
+                        <td>${player.getAverageSkill().toFixed(1)}</td>
                         <td>${player.age}</td>
                         <td>£${player.value}M</td>
                         <td>£${player.wage}K</td>
-                        ${teamIndex === 0 ? `<td><button onclick="sellPlayer(0, ${index})">Sell</button></td>` : ''}
                     </tr>
                 `;
         });
 
         html += `
                         <tr>
-                            <td colspan="${teamIndex === 0 ? 7 : 6}"><h4>Substitutes:</h4></td>
+                            <td colspan="6"><h4>Substitutes:</h4></td>
                         </tr>
             `;
         team.players.slice(11, 16).forEach((player, index) => {
             html += `
                     <tr>
-                        <td>${player.name}</td>
+                        <td><span class="player-link" onclick="showPlayerPopup('team', ${teamIndex}, ${index + 11})">${player.name}</span></td>
                         <td>${player.position}</td>
-                        <td>${player.skill}</td>
+                        <td>${player.getAverageSkill().toFixed(1)}</td>
                         <td>${player.age}</td>
                         <td>£${player.value}M</td>
                         <td>£${player.wage}K</td>
-                        ${teamIndex === 0 ? `<td><button onclick="sellPlayer(0, ${index + 11})">Sell</button></td>` : ''}
                     </tr>
                 `;
         });
 
         html += `
                         <tr>
-                            <td colspan="${teamIndex === 0 ? 7 : 6}"><h4>Reserves:</h4></td>
+                            <td colspan="6"><h4>Reserves:</h4></td>
                         </tr>
             `;
         team.players.slice(16).forEach((player, index) => {
             html += `
                     <tr>
-                        <td>${player.name}</td>
+                        <td><span class="player-link" onclick="showPlayerPopup('team', ${teamIndex}, ${index + 16})">${player.name}</span></td>
                         <td>${player.position}</td>
-                        <td>${player.skill}</td>
+                        <td>${player.getAverageSkill().toFixed(1)}</td>
                         <td>${player.age}</td>
                         <td>£${player.value}M</td>
                         <td>£${player.wage}K</td>
-                        ${teamIndex === 0 ? `<td><button onclick="sellPlayer(0, ${index + 16})">Sell</button></td>` : ''}
                     </tr>
                 `;
         });
@@ -803,11 +841,10 @@
                             <tr>
                                 <th>Name</th>
                                 <th>Position</th>
-                                <th>Skill</th>
+                                <th>Avg Skill</th>
                                 <th>Age</th>
                                 <th>Value</th>
                                 <th>Wage</th>
-                                <th>Action</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -815,13 +852,12 @@
             transferList.forEach((player, index) => {
                 html += `
                         <tr>
-                            <td>${player.name}</td>
+                            <td><span class="player-link" onclick="showPlayerPopup('transfer', ${index})">${player.name}</span></td>
                             <td>${player.position}</td>
-                            <td>${player.skill}</td>
+                            <td>${player.getAverageSkill().toFixed(1)}</td>
                             <td>${player.age}</td>
                             <td>£${player.value}M</td>
                             <td>£${player.wage}K</td>
-                            <td><button onclick="buyPlayer(${index})">Buy</button></td>
                         </tr>
                     `;
             });
@@ -835,6 +871,89 @@
     function hideTransferPopup() {
         document.getElementById("transfer-popup").style.display = "none";
         document.getElementById("popup-overlay").style.display = "none";
+    }
+
+    function showPlayerPopup(source, index1, index2 = null) {
+        let player, teamIndex, playerIndex, isYourTeam;
+        if (source === 'team') {
+            teamIndex = index1;
+            playerIndex = index2;
+            player = leagues[yourTeamLeagueIndex].teams[teamIndex].players[playerIndex];
+            isYourTeam = teamIndex === 0;
+        } else if (source === 'transfer') {
+            playerIndex = index1;
+            player = transferList[playerIndex];
+            isYourTeam = false;
+        }
+
+        let popup = document.getElementById("player-popup");
+        let overlay = document.getElementById("popup-overlay");
+        let html = `
+                <div class="popup-header">
+                    <h3>${player.name}</h3>
+                    <span class="close-btn" onclick="hidePlayerPopup()">X</span>
+                </div>
+                <p><strong>Age:</strong> ${player.age}</p>
+                <p><strong>Nationality:</strong> ${player.nationality}</p>
+                <p><strong>Position:</strong> ${player.position}</p>
+                <p><strong>Value:</strong> £${player.value}M</p>
+                <p><strong>Wage:</strong> £${player.wage}K</p>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Passing</th>
+                            <th>Tackling</th>
+                            <th>Pace</th>
+                            <th>Heading</th>
+                            <th>Stamina</th>
+                            <th>Shooting</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>${player.skills.passing}</td>
+                            <td>${player.skills.tackling}</td>
+                            <td>${player.skills.pace}</td>
+                            <td>${player.skills.heading}</td>
+                            <td>${player.skills.stamina}</td>
+                            <td>${player.skills.shooting}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            `;
+        if (isYourTeam) {
+            html += `<button onclick="sellPlayerFromPopup(${teamIndex}, ${playerIndex});hidePlayerPopup()">Sell Player</button>`;
+        } else if (source === 'transfer') {
+            html += `<button onclick="buyPlayerFromPopup(${playerIndex});hidePlayerPopup()">Buy Player</button>`;
+        }
+        popup.innerHTML = html;
+        popup.style.display = "block";
+        overlay.style.display = "block";
+    }
+
+    function hidePlayerPopup() {
+        document.getElementById("player-popup").style.display = "none";
+        document.getElementById("popup-overlay").style.display = "none";
+    }
+
+    function sellPlayerFromPopup(teamIndex, playerIndex) {
+        let team = leagues[yourTeamLeagueIndex].teams[teamIndex];
+        let player = team.removePlayer(playerIndex);
+        team.budget += parseFloat(player.value);
+        showTeamPopup(teamIndex);
+    }
+
+    function buyPlayerFromPopup(transferIndex) {
+        let player = transferList[transferIndex];
+        let yourTeam = leagues[yourTeamLeagueIndex].teams[0];
+        if (yourTeam.budget >= player.value && yourTeam.players.length < 25) {
+            yourTeam.addPlayer(player);
+            yourTeam.budget -= parseFloat(player.value);
+            transferList.splice(transferIndex, 1);
+            showTransferPopup();
+        } else {
+            alert("Not enough budget or squad space (max 25 players)!");
+        }
     }
 
     function showHistoryPopup(leagueIndex = yourTeamLeagueIndex) {
@@ -900,7 +1019,7 @@
         document.getElementById("popup-overlay").style.display = "none";
     }
 
-    function showFixturesPopup(leagueIndex = yourTeamLeagueIndex) {
+    function showFixturesPopup( MPGleagueIndex = yourTeamLeagueIndex) {
         let popup = document.getElementById("fixtures-popup");
         let overlay = document.getElementById("popup-overlay");
         let league = leagues[leagueIndex];
@@ -997,18 +1116,18 @@
             `;
         standings.forEach((team, index) => {
             let rowClass = '';
-            if (league.tier === 0) { // Premier League
+            if (league.tier === 0) {
                 if (index === 0) rowClass = 'champions';
-                else if (index < 4) rowClass = 'euro-league'; // 2nd-4th
-                else if (index < 6) rowClass = 'secondary-euro'; // 5th-6th
+                else if (index < 4) rowClass = 'euro-league';
+                else if (index < 6) rowClass = 'secondary-euro';
                 else if (index >= 17) rowClass = 'relegation';
-            } else if (league.tier === 1 || league.tier === 2) { // Championship, League One
+            } else if (league.tier === 1 || league.tier === 2) {
                 if (index < 2) rowClass = 'auto-promotion';
                 else if (index < 6) rowClass = 'playoff';
                 else if (index >= 17) rowClass = 'relegation';
-            } else if (league.tier === 3) { // League Two
-                if (index < 3) rowClass = 'auto-promotion'; // 3 auto spots
-                else if (index < 7) rowClass = 'playoff'; // 4th-7th
+            } else if (league.tier === 3) {
+                if (index < 3) rowClass = 'auto-promotion';
+                else if (index < 7) rowClass = 'playoff';
             }
             if (team.name === yourTeamName) rowClass = 'your-team';
             tableHTML += `
@@ -1039,27 +1158,7 @@
         hideHistoryPopup();
         hideFixturesPopup();
         hideTablePopup();
-    }
-
-    function sellPlayer(teamIndex, playerIndex) {
-        let team = leagues[yourTeamLeagueIndex].teams[teamIndex];
-        let player = team.removePlayer(playerIndex);
-        team.budget += parseFloat(player.value);
-        showTeamPopup(teamIndex);
-    }
-
-    function buyPlayer(transferIndex) {
-        let player = transferList[transferIndex];
-        let yourTeam = leagues[yourTeamLeagueIndex].teams[0];
-        if (yourTeam.budget >= player.value && yourTeam.players.length < 25) {
-            yourTeam.addPlayer(player);
-            yourTeam.budget -= parseFloat(player.value);
-            transferList.splice(transferIndex, 1);
-            showTransferPopup();
-            showTeamPopup(0);
-        } else {
-            alert("Not enough budget or squad space (max 25 players)!");
-        }
+        hidePlayerPopup();
     }
 
     // Initial setup
