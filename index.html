@@ -78,6 +78,22 @@
             margin-bottom: 10px;
         }
         /* League Table Zones */
+        tr.champions {
+            background-color: #ffd700; /* Gold */
+            border-top: 2px solid #b8860b;
+        }
+        tr.euro-league {
+            background-color: #d4edda; /* Light green */
+        }
+        tr.euro-league:last-child {
+            border-bottom: 2px solid #28a745;
+        }
+        tr.secondary-euro {
+            background-color: #cce5ff; /* Light blue */
+        }
+        tr.secondary-euro:last-child {
+            border-bottom: 2px solid #007bff;
+        }
         tr.auto-promotion {
             background-color: #d4edda; /* Light green */
             border-top: 2px solid #28a745;
@@ -95,12 +111,12 @@
             border-top: 2px solid #dc3545;
         }
         tr.your-team {
-            background-color: #cce5ff; /* Light blue */
+            background-color: #e6ccff; /* Light purple */
             font-weight: bold;
         }
         /* Results Highlight */
         tr.your-team-result {
-            background-color: #cce5ff;
+            background-color: #e6ccff;
         }
     </style>
 </head>
@@ -110,8 +126,8 @@
     <button onclick="showTeamPopup(0)">Your Team</button>
     <button onclick="nextAction()" id="next-action-button">Next Match Day</button>
     <button onclick="showTransferPopup()">Transfer Market</button>
-    <button onclick="showHistoryPopup()">Fixture History</button>
-    <button onclick="showFixturesPopup()">Future Fixtures</button>
+    <button onclick="showHistoryPopup()">Results</button>
+    <button onclick="showFixturesPopup()">Fixtures</button>
     <button onclick="showTablePopup()">League Table</button>
 </div>
 <div id="match-result"></div>
@@ -155,7 +171,7 @@
         addPlayer(player) {
             this.players.push(player);
             this.wageBill += player.wage;
-            if (this.name === "Grok United") {
+            if (this.name === yourTeamName) {
                 this.updateStartingXI(player);
             }
         }
@@ -343,7 +359,11 @@
         "Iron Ions", "Sky Sentinels", "Lunar Legends", "Code Commanders", "Bit Blasters",
         "Wire Wolves", "Tech Templars", "Nano Navigators", "Pulse Prowlers", "Echo Enforcers",
         "Vortex Voyagers", "Spark Seekers", "Grid Guardians", "Byte Brawlers", "Circuit Chargers",
-        "Data Defenders", "Quantum Questers", "Neon Nomads", "Flux Force", "Core Captains"
+        "Data Defenders", "Quantum Questers", "Neon Nomads", "Flux Force", "Core Captains",
+        "Laser Lions", "Sonic Stags", "Blaze Bears", "Thunder Thorns", "Frost Falcons",
+        "Gale Griffins", "Rift Ravens", "Tide Titans", "Peak Pumas", "Crest Cobras",
+        "Drift Ducks", "Bolt Badgers", "Surge Sharks", "Glint Gators", "Haze Hawks",
+        "Void Vultures", "Rush Rhinos", "Flare Foxes", "Chill Cheetahs", "Storm Stallions"
     ];
 
     const firstNames = [
@@ -379,7 +399,8 @@
         const stadiumCapacity = Math.floor(Math.random() * 70000) + 10000;
         const popularity = leagueTier === 0 ? Math.floor(Math.random() * 31) + 70 :
             leagueTier === 1 ? Math.floor(Math.random() * 41) + 40 :
-                Math.floor(Math.random() * 41) + 20;
+                leagueTier === 2 ? Math.floor(Math.random() * 41) + 30 :
+                    Math.floor(Math.random() * 41) + 20;
         let team = new Team(name, formation.name, leagueTier, stadiumCapacity, popularity);
 
         team.addPlayer(new Player(
@@ -480,10 +501,12 @@
         return team;
     }
 
+    const yourTeamName = "Grok United"; // Global variable for your team
     let leagues = [
         new League(teamNames.slice(0, 20).map(name => generateTeam(name, 0)), 0),
         new League(teamNames.slice(20, 40).map(name => generateTeam(name, 1)), 1),
-        new League(teamNames.slice(40, 60).map(name => generateTeam(name, 2)), 2)
+        new League(teamNames.slice(40, 60).map(name => generateTeam(name, 2)), 2),
+        new League(teamNames.slice(60, 80).map(name => generateTeam(name, 3)), 3) // League Two
     ];
     let yourTeamLeagueIndex = 0;
     let currentHistoryDay = 0;
@@ -557,6 +580,7 @@
                     <button onclick="currentResultLeague=0;displayMatchDayResults()">Premier League</button>
                     <button onclick="currentResultLeague=1;displayMatchDayResults()">Championship</button>
                     <button onclick="currentResultLeague=2;displayMatchDayResults()">League One</button>
+                    <button onclick="currentResultLeague=3;displayMatchDayResults()">League Two</button>
                 </div>
             `;
         let tableHTML = `
@@ -573,7 +597,7 @@
             `;
         let results = leagues[currentResultLeague].getTodayResults();
         results.forEach(result => {
-            let isYourTeam = result.homeTeam === "Grok United" || result.awayTeam === "Grok United";
+            let isYourTeam = result.homeTeam === yourTeamName || result.awayTeam === yourTeamName;
             tableHTML += `
                     <tr ${isYourTeam ? 'class="your-team-result"' : ''}>
                         <td>${result.homeTeam}</td>
@@ -597,7 +621,8 @@
             let standings = league.getStandings();
             const prizeMoney = league.tier === 0 ? [50, 45, 40, 35, 30, 28, 26, 24, 22, 20, 18, 16, 14, 12, 10, 9, 8, 7, 6, 5] :
                 league.tier === 1 ? [20, 18, 16, 14, 12, 10, 9, 8, 7, 6, 5, 4, 3, 2.5, 2, 1.8, 1.6, 1.4, 1.2, 1] :
-                    [10, 9, 8, 7, 6, 5, 4.5, 4, 3.5, 3, 2.5, 2, 1.8, 1.6, 1.4, 1.2, 1, 0.9, 0.8, 0.7];
+                    league.tier === 2 ? [10, 9, 8, 7, 6, 5, 4.5, 4, 3.5, 3, 2.5, 2, 1.8, 1.6, 1.4, 1.2, 1, 0.9, 0.8, 0.7] :
+                        [5, 4.5, 4, 3.5, 3, 2.5, 2, 1.8, 1.6, 1.4, 1.2, 1, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2];
             standings.forEach((team, index) => {
                 team.budget += prizeMoney[index];
                 team.points = 0;
@@ -635,10 +660,18 @@
                 let playoffWinner = simulatePlayoff(playoffTeams);
                 league.teams = standings.slice(0, -3).concat(autoPromoted).concat([playoffWinner]);
                 leagues[2].teams = promoted.filter(t => !autoPromoted.includes(t) && t !== playoffWinner).concat(relegated);
+            } else if (league.tier === 2) {
+                let relegated = standings.slice(-3);
+                let promoted = leagues[3].getStandings();
+                let autoPromoted = promoted.slice(0, 3); // 3 auto-promotion for League Two
+                let playoffTeams = promoted.slice(3, 7); // 4 playoff teams (4th-7th)
+                let playoffWinner = simulatePlayoff(playoffTeams);
+                league.teams = standings.slice(0, -3).concat(autoPromoted).concat([playoffWinner]);
+                leagues[3].teams = promoted.filter(t => !autoPromoted.includes(t) && t !== playoffWinner).concat(relegated);
             }
         });
 
-        yourTeamLeagueIndex = leagues.findIndex(league => league.teams.some(team => team.name === "Grok United"));
+        yourTeamLeagueIndex = leagues.findIndex(league => league.teams.some(team => team.name === yourTeamName));
         leagues.forEach(league => {
             league.matchDay = 0;
             league.history = [];
@@ -663,7 +696,7 @@
 
         let html = `
                 <div class="popup-header">
-                    <h3>${team.name} (${["Premier League", "Championship", "League One"][team.leagueTier]})</h3>
+                    <h3>${team.name} (${["Premier League", "Championship", "League One", "League Two"][team.leagueTier]})</h3>
                     <span class="close-btn" onclick="hideTeamPopup()">X</span>
                 </div>
                 <p><strong>Formation:</strong> ${team.formation}</p>
@@ -810,13 +843,14 @@
         let league = leagues[leagueIndex];
         popup.innerHTML = `
                 <div class="popup-header">
-                    <h3>Fixture History - ${["Premier League", "Championship", "League One"][league.tier]}</h3>
+                    <h3>Fixture History - ${["Premier League", "Championship", "League One", "League Two"][league.tier]}</h3>
                     <span class="close-btn" onclick="hideHistoryPopup()">X</span>
                 </div>
                 <div class="league-tabs">
                     <button onclick="showHistoryPopup(0)">Premier League</button>
                     <button onclick="showHistoryPopup(1)">Championship</button>
                     <button onclick="showHistoryPopup(2)">League One</button>
+                    <button onclick="showHistoryPopup(3)">League Two</button>
                 </div>
             `;
         let controlsHTML = "";
@@ -843,7 +877,7 @@
                         <tbody>
                 `;
             day.results.forEach(result => {
-                let isYourTeam = result.homeTeam === "Grok United" || result.awayTeam === "Grok United";
+                let isYourTeam = result.homeTeam === yourTeamName || result.awayTeam === yourTeamName;
                 contentHTML += `
                         <tr ${isYourTeam ? 'class="your-team-result"' : ''}>
                             <td>${result.homeTeam}</td>
@@ -873,13 +907,14 @@
         let futureFixtures = league.getFutureFixtures();
         popup.innerHTML = `
                 <div class="popup-header">
-                    <h3>Future Fixtures - ${["Premier League", "Championship", "League One"][league.tier]}</h3>
+                    <h3>Future Fixtures - ${["Premier League", "Championship", "League One", "League Two"][league.tier]}</h3>
                     <span class="close-btn" onclick="hideFixturesPopup()">X</span>
                 </div>
                 <div class="league-tabs">
                     <button onclick="showFixturesPopup(0)">Premier League</button>
                     <button onclick="showFixturesPopup(1)">Championship</button>
                     <button onclick="showFixturesPopup(2)">League One</button>
+                    <button onclick="showFixturesPopup(3)">League Two</button>
                 </div>
             `;
         let controlsHTML = "";
@@ -907,7 +942,7 @@
                 `;
             day.fixtures.forEach(fixture => {
                 const [home, away] = fixture.split(" vs ");
-                let isYourTeam = home === "Grok United" || away === "Grok United";
+                let isYourTeam = home === yourTeamName || away === yourTeamName;
                 contentHTML += `
                         <tr ${isYourTeam ? 'class="your-team-result"' : ''}>
                             <td>${home}</td>
@@ -936,13 +971,14 @@
         let standings = league.getStandings();
         popup.innerHTML = `
                 <div class="popup-header">
-                    <h3>${["Premier League", "Championship", "League One"][league.tier]} Table</h3>
+                    <h3>${["Premier League", "Championship", "League One", "League Two"][league.tier]} Table</h3>
                     <span class="close-btn" onclick="hideTablePopup()">X</span>
                 </div>
                 <div class="league-tabs">
                     <button onclick="showTablePopup(0)">Premier League</button>
                     <button onclick="showTablePopup(1)">Championship</button>
                     <button onclick="showTablePopup(2)">League One</button>
+                    <button onclick="showTablePopup(3)">League Two</button>
                 </div>
             `;
         let tableHTML = `
@@ -961,15 +997,20 @@
             `;
         standings.forEach((team, index) => {
             let rowClass = '';
-            if (league.tier < 2) { // Premier League has no promotion
+            if (league.tier === 0) { // Premier League
+                if (index === 0) rowClass = 'champions';
+                else if (index < 4) rowClass = 'euro-league'; // 2nd-4th
+                else if (index < 6) rowClass = 'secondary-euro'; // 5th-6th
+                else if (index >= 17) rowClass = 'relegation';
+            } else if (league.tier === 1 || league.tier === 2) { // Championship, League One
                 if (index < 2) rowClass = 'auto-promotion';
                 else if (index < 6) rowClass = 'playoff';
                 else if (index >= 17) rowClass = 'relegation';
-            } else if (league.tier === 2) { // League One has no relegation
-                if (index < 2) rowClass = 'auto-promotion';
-                else if (index < 6) rowClass = 'playoff';
+            } else if (league.tier === 3) { // League Two
+                if (index < 3) rowClass = 'auto-promotion'; // 3 auto spots
+                else if (index < 7) rowClass = 'playoff'; // 4th-7th
             }
-            if (team.name === "Grok United") rowClass = 'your-team';
+            if (team.name === yourTeamName) rowClass = 'your-team';
             tableHTML += `
                     <tr class="${rowClass}">
                         <td><span class="team-link" onclick="showTeamPopup(${index});hideTablePopup()">${team.name}</span></td>
