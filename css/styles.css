@@ -1,0 +1,135 @@
+body {
+    font-family: Arial, sans-serif;
+    margin: 20px;
+}
+button {
+    padding: 5px 10px;
+    margin: 2px;
+}
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+th,
+td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: left;
+}
+th {
+    background-color: #f2f2f2;
+}
+tr:nth-child(even) {
+    background-color: #f9f9f9;
+}
+tr:nth-child(odd) {
+    background-color: #ffffff;
+}
+.team-link,
+.player-link {
+    cursor: pointer;
+    color: blue;
+    text-decoration: underline;
+}
+#team-popup,
+#transfer-popup,
+#results-popup,
+#fixtures-popup,
+#table-popup,
+#player-popup {
+    display: none;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: white;
+    padding: 20px;
+    border: 2px solid #333;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    max-height: 80vh;
+    overflow-y: auto;
+    width: 900px;
+}
+#popup-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 999;
+}
+.popup-header {
+    position: relative;
+    margin-bottom: 10px;
+}
+.close-btn {
+    position: absolute;
+    top: 0;
+    right: 0;
+    font-size: 20px;
+    font-weight: bold;
+    cursor: pointer;
+    padding: 0 5px;
+}
+.league-tabs {
+    margin-bottom: 10px;
+}
+tr.champions {
+    background-color: #ffd700;
+    border-top: 2px solid #b8860b;
+}
+tr.euro-league {
+    background-color: #d4edda;
+}
+tr.euro-league:last-child {
+    border-bottom: 2px solid #28a745;
+}
+tr.secondary-euro {
+    background-color: #cce5ff;
+}
+tr.secondary-euro:last-child {
+    border-bottom: 2px solid #007bff;
+}
+tr.auto-promotion {
+    background-color: #d4edda;
+    border-top: 2px solid #28a745;
+}
+tr.playoff {
+    background-color: #fff3cd;
+}
+tr.playoff:last-child {
+    border-bottom: 2px solid #ffc107;
+}
+tr.relegation {
+    background-color: #f8d7da;
+}
+tr.relegation:first-child {
+    border-top: 2px solid #dc3545;
+}
+tr.your-team {
+    background-color: #e6ccff;
+    font-weight: bold;
+}
+tr.your-team-result {
+    background-color: #e6ccff;
+}
+th.team-column,
+td.team-column {
+    width: 50%;
+}
+#player-popup table {
+    width: 45%;
+    float: left;
+    margin-right: 5%;
+}
+#player-popup table:last-child {
+    margin-right: 0;
+}
+#player-popup::after {
+    content: '';
+    display: table;
+    clear: both;
+}

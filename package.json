@@ -1,27 +1,27 @@
 {
-  "name": "js-football-manager",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "format:check": "prettier .",
-    "format:fix": "prettier --write ."
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/nickdeakin/js-football-manager.git"
-  },
-  "author": "Nick Deakin",
-  "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/nickdeakin/js-football-manager/issues"
-  },
-  "homepage": "https://github.com/nickdeakin/js-football-manager#readme",
-  "devDependencies": {
-    "@adultlee/prettier-plugin-html-formatter-in-backtick": "^0.2.0",
-    "eslint-config-prettier": "^10.1.1",
-    "eslint-plugin-prettier": "^5.2.3",
-    "prettier": "^3.5.3"
-  }
+    "name": "js-football-manager",
+    "version": "1.0.0",
+    "description": "",
+    "main": "index.js",
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1",
+        "format:check": "prettier .",
+        "format:fix": "prettier --write ."
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/nickdeakin/js-football-manager.git"
+    },
+    "author": "Nick Deakin",
+    "license": "ISC",
+    "bugs": {
+        "url": "https://github.com/nickdeakin/js-football-manager/issues"
+    },
+    "homepage": "https://github.com/nickdeakin/js-football-manager#readme",
+    "devDependencies": {
+        "@adultlee/prettier-plugin-html-formatter-in-backtick": "^0.2.0",
+        "eslint-config-prettier": "^10.1.1",
+        "eslint-plugin-prettier": "^5.2.3",
+        "prettier": "^3.5.3"
+    }
 }
