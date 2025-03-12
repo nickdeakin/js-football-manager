@@ -1,3 +1,7 @@
+// js/ui.js (top)
+let uiCurrentHistoryDay = 0;
+let uiCurrentFutureDay = 0;
+
 function showTeamPopup(teamIndex) {
     let league = leagues[yourTeamLeagueIndex];
     let team = league.teams[teamIndex];
@@ -95,9 +99,12 @@ function hideTeamPopup() {
 function showTransferPopup() {
     let popup = document.getElementById('transfer-popup');
     let overlay = document.getElementById('popup-overlay');
+    let yourTeam = leagues[yourTeamLeagueIndex].teams.find(
+        (t) => t.name === yourTeamName
+    );
     let html = `
         <div class="popup-header">
-            <h3>Transfer Market (Your Budget: £${leagues[yourTeamLeagueIndex].teams[0].budget.toFixed(1)}M)</h3>
+            <h3>Transfer Market (Your Budget: £${yourTeam.budget.toFixed(1)}M)</h3>
             <span class="close-btn" onclick="hideTransferPopup()">X</span>
         </div>
     `;
@@ -219,6 +226,10 @@ function showResultsPopup(leagueIndex = yourTeamLeagueIndex) {
     let popup = document.getElementById('results-popup');
     let overlay = document.getElementById('popup-overlay');
     let league = leagues[leagueIndex];
+    uiCurrentHistoryDay = Math.min(
+        uiCurrentHistoryDay,
+        league.history.length - 1
+    );
     popup.innerHTML = `
         <div class="popup-header">
             <h3>Results - ${['Premier League', 'Championship', 'League One', 'League Two'][league.tier]}</h3>
@@ -283,6 +294,10 @@ function showFixturesPopup(leagueIndex = yourTeamLeagueIndex) {
     let overlay = document.getElementById('popup-overlay');
     let league = leagues[leagueIndex];
     let futureFixtures = league.getFutureFixtures();
+    uiCurrentFutureDay = Math.min(
+        uiCurrentFutureDay,
+        futureFixtures.length - 1
+    );
     popup.innerHTML = `
         <div class="popup-header">
             <h3>Fixtures - ${['Premier League', 'Championship', 'League One', 'League Two'][league.tier]}</h3>
@@ -375,19 +390,24 @@ function showTablePopup(leagueIndex = yourTeamLeagueIndex) {
             <tbody>
     `;
     standings.forEach((team, index) => {
+        const position = index + 1;
         let rowClass = '';
         if (league.tier === 0) {
-            if (index === 0) rowClass = 'champions';
-            else if (index < 4) rowClass = 'euro-league';
-            else if (index < 6) rowClass = 'secondary-euro';
-            else if (index >= 17) rowClass = 'relegation';
-        } else if (league.tier === 1 || league.tier === 2) {
-            if (index < 2) rowClass = 'auto-promotion';
-            else if (index < 6) rowClass = 'playoff';
-            else if (index >= 17) rowClass = 'relegation';
-        } else if (league.tier === 3) {
-            if (index < 3) rowClass = 'auto-promotion';
-            else if (index < 7) rowClass = 'playoff';
+            if (position === 1) rowClass = 'champions';
+            else if (position < 5) rowClass = 'euro-league';
+            else if (position < 7) rowClass = 'secondary-euro';
+            else if (position >= 18) rowClass = 'relegation';
+        }
+        if (league.tier > 0) {
+            if (league.promotion.automatic.indexOf(position) > -1) {
+                rowClass = 'auto-promotion';
+            }
+            if (league.promotion.playoff.indexOf(position) > -1) {
+                rowClass = 'playoff';
+            }
+            if (league.relegation.automatic.indexOf(position) > -1) {
+                rowClass = 'relegation';
+            }
         }
         if (team.name === yourTeamName) rowClass = 'your-team';
         tableHTML += `
@@ -426,5 +446,6 @@ generateTransferList();
 window.onload = function () {
     document.getElementById('match-result').innerHTML =
         `<h3>Welcome to Football Manager - Season ${seasonNumber}</h3>`;
+    setTeamIndex();
     setNextActionButtonText();
 };
