@@ -6,7 +6,9 @@
     "scripts": {
         "test": "echo \"Error: no test specified\" && exit 1",
         "format:check": "prettier .",
-        "format:fix": "prettier --write ."
+        "format:fix": "prettier --write .",
+        "serve:dev": "npx serve"
+
     },
     "repository": {
         "type": "git",
@@ -22,6 +24,7 @@
         "@adultlee/prettier-plugin-html-formatter-in-backtick": "^0.2.0",
         "eslint-config-prettier": "^10.1.1",
         "eslint-plugin-prettier": "^5.2.3",
-        "prettier": "^3.5.3"
+        "prettier": "^3.5.3",
+        "serve": "^14.2.4"
     }
 }

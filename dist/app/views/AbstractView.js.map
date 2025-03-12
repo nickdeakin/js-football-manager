@@ -1,0 +1,1 @@
+{"version":3,"file":"AbstractView.js","sourceRoot":"","sources":["../../../src/app/views/AbstractView.ts"],"names":[],"mappings":";;;;;;;;;;;AAAA;IAGE,YAAY,MAAM;QAFlB,WAAM,GAAG,EAAE,CAAC;QAGV,IAAI,CAAC,MAAM,GAAG,MAAM,CAAC;IACvB,CAAC;IAED,QAAQ,CAAC,KAAK;QACZ,QAAQ,CAAC,KAAK,GAAG,KAAK,CAAC;IACzB,CAAC;IAEK,OAAO;;YACX,OAAO,EAAE,CAAC;QACZ,CAAC;KAAA;CACF;AAdD,4BAcC"}

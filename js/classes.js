@@ -147,12 +147,15 @@ class Match {
 }
 
 class League {
-    constructor(teams, tier) {
+    constructor({ teams, tier, promotion, relegation, prizeMoney }) {
         this.teams = teams;
         this.tier = tier;
         this.matchDay = 0;
         this.matchDays = this.generateMatchDays();
         this.history = [];
+        this.promotion = promotion;
+        this.relegation = relegation;
+        this.prizeMoney = prizeMoney;
     }
 
     isSeasonOver() {

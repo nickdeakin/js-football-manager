@@ -1,28 +1,58 @@
-const yourTeamName = 'Grok United';
-let leagues = [
-    new League(
-        teamNames.slice(0, 20).map((name) => generateTeam(name, 0)),
-        0
-    ),
-    new League(
-        teamNames.slice(20, 40).map((name) => generateTeam(name, 1)),
-        1
-    ),
-    new League(
-        teamNames.slice(40, 60).map((name) => generateTeam(name, 2)),
-        2
-    ),
-    new League(
-        teamNames.slice(60, 80).map((name) => generateTeam(name, 3)),
-        3
-    ),
-];
+let yourTeamName = 'Swindon Town';
+
 let yourTeamLeagueIndex = 0;
 let currentHistoryDay = 0;
 let currentFutureDay = 0;
 let transferList = [];
 let seasonNumber = 1;
 let currentResultLeague = 0;
+let currentMatchDay = 0;
+
+let leagues = [
+    new League({
+        teams: teams.premier.map((team) => generateTeam(team.name, 0)),
+        tier: 0,
+        size: 20,
+        promotion: { automatic: [], playoff: [], tier: null },
+        relegation: { automatic: [18, 19, 20], playoff: [], tier: 1 },
+        prizeMoney: [
+            50, 45, 40, 35, 30, 28, 26, 24, 22, 20, 18, 16, 14, 12, 10, 9, 8, 7,
+            6, 5,
+        ],
+    }),
+    new League({
+        teams: teams.championship.map((team) => generateTeam(team.name, 1)),
+        tier: 1,
+        size: 24,
+        promotion: { automatic: [1, 2], playoff: [3, 4, 5, 6], tier: 0 },
+        relegation: { automatic: [22, 23, 24], playoff: [], tier: 2 },
+        prizeMoney: [
+            20, 18, 16, 14, 12, 10, 9, 8, 7, 6, 5, 4, 3, 2.5, 2, 1.9, 1.8, 1.7,
+            1.6, 1.5, 1.4, 1.3, 1.2, 1.1,
+        ],
+    }),
+    new League({
+        teams: teams.league1.map((team) => generateTeam(team.name, 2)),
+        tier: 2,
+        promotion: { automatic: [1, 2], playoff: [3, 4, 5, 6], tier: 1 },
+        relegation: { automatic: [21, 22, 23, 24], playoff: [], tier: 3 },
+        prizeMoney: [
+            10, 9, 8, 7, 6, 5, 4.5, 4, 3.5, 3, 2.5, 2, 1.8, 1.6, 1.5, 1.4, 1.3,
+            1.2, 1.1, 1, 1, 1, 1, 1,
+        ],
+    }),
+    new League({
+        teams: teams.league2.map((team) => generateTeam(team.name, 3)),
+        tier: 3,
+        size: 24,
+        promotion: { automatic: [1, 2, 3], playoff: [4, 5, 6, 7], tier: 2 },
+        relegation: { automatic: [23, 24], playoff: [], tier: null },
+        prizeMoney: [
+            5, 4.5, 4, 3.5, 3, 2.5, 2, 1.8, 1.6, 1.4, 1.2, 1, 1, 1, 1, 1, 1, 1,
+            1,
+        ],
+    }),
+];
 
 function nextAction() {
     if (leagues.every((league) => league.isSeasonOver())) {
@@ -34,15 +64,16 @@ function nextAction() {
 
 function simulateMatchDay() {
     leagues.forEach((league) => league.simulateMatchDay());
-    currentHistoryDay = leagues[yourTeamLeagueIndex].history.length - 1;
+    currentHistoryDay = currentHistoryDay++;
+    currentMatchDay++;
+    currentResultLeague = yourTeamLeagueIndex;
     displayMatchDayResults();
     setNextActionButtonText();
 }
 
 function displayMatchDayResults() {
     let resultDiv = document.getElementById('match-result');
-    let matchDay = leagues[yourTeamLeagueIndex].matchDay;
-    resultDiv.innerHTML = `<h3>Season ${seasonNumber} - Match Day ${matchDay} Results:</h3>`;
+    resultDiv.innerHTML = `<h3>Season ${seasonNumber} - Match Day ${currentMatchDay} Results:</h3>`;
     resultDiv.innerHTML += `
         <div class="league-tabs">
             <button onclick="currentResultLeague=0;displayMatchDayResults()">Premier League</button>
@@ -91,92 +122,85 @@ function setNextActionButtonText() {
 function newSeason() {
     leagues.forEach((league) => {
         let standings = league.getStandings();
-        const prizeMoney =
-            league.tier === 0
-                ? [
-                      50, 45, 40, 35, 30, 28, 26, 24, 22, 20, 18, 16, 14, 12,
-                      10, 9, 8, 7, 6, 5,
-                  ]
-                : league.tier === 1
-                  ? [
-                        20, 18, 16, 14, 12, 10, 9, 8, 7, 6, 5, 4, 3, 2.5, 2,
-                        1.8, 1.6, 1.4, 1.2, 1,
-                    ]
-                  : league.tier === 2
-                    ? [
-                          10, 9, 8, 7, 6, 5, 4.5, 4, 3.5, 3, 2.5, 2, 1.8, 1.6,
-                          1.4, 1.2, 1, 0.9, 0.8, 0.7,
-                      ]
-                    : [
-                          5, 4.5, 4, 3.5, 3, 2.5, 2, 1.8, 1.6, 1.4, 1.2, 1, 0.9,
-                          0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2,
-                      ];
+        let promoted = [];
+        let relegated = [];
+        let playoff = [];
+        let promotionTier = null;
+        let relegationTier = null;
+
+        if (league.promotion.tier !== null) {
+            promotionTier = leagues.find((x) => x.tier === league.promotion.tier);
+        }
+
+        if (league.relegation.tier !== null) {
+            relegationTier = leagues.find((x) => x.tier === league.relegation.tier);
+        }
+
+
+        if (league.promotion.automatic) {
+            promoted = league.promotion.automatic.map((x) => standings[x - 1]);
+        }
+        if (league.promotion.playoff) {
+            playoff = league.promotion.playoff.map((x) => standings[x - 1]);
+        }
+        if (league.relegation.automatic) {
+            relegated = league.relegation.automatic.map(
+                (x) => standings[x - 1]
+            );
+        }
+
+        if (playoff.length > 0) {
+            let playoffWinner = simulatePlayoff(playoff);
+            promoted.push(playoffWinner);
+        }
+
         standings.forEach((team, index) => {
-            team.budget += prizeMoney[index];
+            // Allocate prize money
+            team.budget += league.prizeMoney[index];
+
+            // Reset the league
             team.points = 0;
             team.played = 0;
             team.wins = 0;
             team.draws = 0;
             team.losses = 0;
 
+            // Handle age increase
             let retirees = [];
             team.players.forEach((player, index) => {
                 player.age += 1;
                 player.value = calculateValue(player.skills, player.age);
                 if (player.age > 35) retirees.push(index);
             });
+
+            // Handle retirees
             for (let i = retirees.length - 1; i >= 0; i--) {
+                // Player retires
                 let retiredPlayer = team.removePlayer(retirees[i]);
+                // Youth player takes their place
                 let youth = generateYouthPlayer(retiredPlayer.position);
                 team.addPlayer(youth);
             }
         });
 
-        if (league.tier === 0) {
-            let relegated = standings.slice(-3);
-            let promoted = leagues[1].getStandings();
-            let autoPromoted = promoted.slice(0, 2);
-            let playoffTeams = promoted.slice(2, 6);
-            let playoffWinner = simulatePlayoff(playoffTeams);
-            league.teams = standings
-                .slice(0, -3)
-                .concat(autoPromoted)
-                .concat([playoffWinner]);
-            leagues[1].teams = promoted
-                .filter((t) => !autoPromoted.includes(t) && t !== playoffWinner)
-                .concat(relegated);
-        } else if (league.tier === 1) {
-            let relegated = standings.slice(-3);
-            let promoted = leagues[2].getStandings();
-            let autoPromoted = promoted.slice(0, 2);
-            let playoffTeams = promoted.slice(2, 6);
-            let playoffWinner = simulatePlayoff(playoffTeams);
-            league.teams = standings
-                .slice(0, -3)
-                .concat(autoPromoted)
-                .concat([playoffWinner]);
-            leagues[2].teams = promoted
-                .filter((t) => !autoPromoted.includes(t) && t !== playoffWinner)
-                .concat(relegated);
-        } else if (league.tier === 2) {
-            let relegated = standings.slice(-3);
-            let promoted = leagues[3].getStandings();
-            let autoPromoted = promoted.slice(0, 3);
-            let playoffTeams = promoted.slice(3, 7);
-            let playoffWinner = simulatePlayoff(playoffTeams);
-            league.teams = standings
-                .slice(0, -3)
-                .concat(autoPromoted)
-                .concat([playoffWinner]);
-            leagues[3].teams = promoted
-                .filter((t) => !autoPromoted.includes(t) && t !== playoffWinner)
-                .concat(relegated);
+        // Promotions
+        if (promotionTier) {
+            league.teams = league.teams.filter((team) =>
+                !promoted.includes(team)
+            );
+            promotionTier.teams = promotionTier.teams.concat(promoted);
+        }
+
+        // Relegations
+        if (relegationTier) {
+            league.teams = league.teams.filter((team) =>
+                !relegated.includes(team)
+            );
+            relegationTier.teams = relegationTier.teams.concat(relegated);
         }
     });
 
-    yourTeamLeagueIndex = leagues.findIndex((league) =>
-        league.teams.some((team) => team.name === yourTeamName)
-    );
+    setTeamIndex();
     leagues.forEach((league) => {
         league.matchDay = 0;
         league.history = [];
@@ -186,8 +210,54 @@ function newSeason() {
     currentFutureDay = 0;
     generateTransferList();
     seasonNumber++;
+    currentMatchDay = 0;
     let resultDiv = document.getElementById('match-result');
     resultDiv.innerHTML = `<h3>Season ${seasonNumber} Started!</h3>`;
     hideAllPopups();
     setNextActionButtonText();
 }
+
+function setTeamIndex() {
+    yourTeamLeagueIndex = leagues.findIndex((league) =>
+        league.teams.some((team) => team.name === yourTeamName)
+    );
+}
+
+function saveGame() {
+    localStorage.setItem(
+        'footballManagerSave',
+        JSON.stringify({
+            leagues,
+            yourTeamName,
+            yourTeamLeagueIndex,
+            seasonNumber,
+            transferList,
+        })
+    );
+}
+function loadGame() {
+    const save = JSON.parse(localStorage.getItem('footballManagerSave'));
+    if (save) {
+        leagues = save.leagues.map((l) =>
+            Object.assign(new League([], l.tier), l)
+        );
+        leagues.forEach((l) => {
+            l.teams = l.teams.map((t) => Object.assign(new Team(), t));
+            l.teams.forEach(
+                (t) =>
+                    (t.players = t.players.map((p) =>
+                        Object.assign(new Player(), p)
+                    ))
+            );
+        });
+        yourTeamName = save.yourTeamName;
+        yourTeamLeagueIndex = save.yourTeamLeagueIndex;
+        seasonNumber = save.seasonNumber;
+        transferList = save.transferList.map((p) =>
+            Object.assign(new Player(), p)
+        );
+    }
+}
+
+// TODO: Disabled for now
+// window.onload = function () { loadGame(); /* existing code */ };

@@ -133,3 +133,21 @@ td.team-column {
     display: table;
     clear: both;
 }
+.team-link:hover,
+.player-link:hover {
+    color: darkblue;
+}
+button:hover {
+    background-color: #ddd;
+}
+
+@media (max-width: 950px) {
+    #team-popup,
+    #transfer-popup,
+    #results-popup,
+    #fixtures-popup,
+    #table-popup,
+    #player-popup {
+        width: 90%;
+    }
+}
