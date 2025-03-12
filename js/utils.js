@@ -26,14 +26,9 @@ function generateSkills(min, max) {
     };
 }
 
-function generateTeam(name, leagueTier) {
+function generateTeam(teamObject, leagueTier) {
     const formation = formations[Math.floor(Math.random() * formations.length)];
-    const stadiumRanges = [
-        [20000, 70000], // Premier League
-        [15000, 45000], // Championship
-        [10000, 35000], // League One
-        [10000, 25000], // League Two
-    ];
+
     const budgetRanges = [
         [50, 250], // Premier League
         [10, 100], // Championship
@@ -46,13 +41,7 @@ function generateTeam(name, leagueTier) {
         { xi: [50, 80], sub: [40, 70], res: [30, 60] }, // League One
         { xi: [40, 70], sub: [30, 60], res: [20, 50] }, // League Two
     ];
-    const stadiumCapacity =
-        Math.floor(
-            Math.random() *
-                (stadiumRanges[leagueTier][1] -
-                    stadiumRanges[leagueTier][0] +
-                    1)
-        ) + stadiumRanges[leagueTier][0];
+
     const popularity =
         leagueTier === 0
             ? Math.floor(Math.random() * 31) + 70
@@ -67,10 +56,10 @@ function generateTeam(name, leagueTier) {
                 (budgetRanges[leagueTier][1] - budgetRanges[leagueTier][0] + 1)
         ) + budgetRanges[leagueTier][0];
     let team = new Team(
-        name,
+        teamObject.name,
         formation.name,
         leagueTier,
-        stadiumCapacity,
+        teamObject.stadium,
         popularity,
         budget
     );

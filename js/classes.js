@@ -17,18 +17,11 @@ class Player {
 }
 
 class Team {
-    constructor(
-        name,
-        formation,
-        leagueTier,
-        stadiumCapacity,
-        popularity,
-        budget
-    ) {
+    constructor(name, formation, leagueTier, stadium, popularity, budget) {
         this.name = name;
         this.formation = formation;
         this.leagueTier = leagueTier;
-        this.stadiumCapacity = stadiumCapacity;
+        this.stadium = stadium;
         this.popularity = popularity;
         this.budget = budget;
         this.players = [];
@@ -127,9 +120,9 @@ class Match {
         const attendance = Math.min(
             Math.floor(
                 ((this.team1.popularity + this.team2.popularity) / 200) *
-                    this.team1.stadiumCapacity
+                    this.team1.stadium.capacity
             ),
-            this.team1.stadiumCapacity
+            this.team1.stadium.capacity
         );
         const totalIncome = (attendance * ticketPrice) / 1000000;
         const splitIncome = totalIncome / 2;

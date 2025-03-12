@@ -8,7 +8,6 @@
         "format:check": "prettier .",
         "format:fix": "prettier --write .",
         "serve:dev": "npx serve"
-
     },
     "repository": {
         "type": "git",
