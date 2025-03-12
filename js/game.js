@@ -1,6 +1,7 @@
 let yourTeamName = 'Swindon Town';
 
 let yourTeamLeagueIndex = 0;
+let yourTeamIndex = 0;
 let currentHistoryDay = 0;
 let currentFutureDay = 0;
 let transferList = [];
@@ -10,7 +11,7 @@ let currentMatchDay = 0;
 
 let leagues = [
     new League({
-        teams: teams.premier.map((team) => generateTeam(team.name, 0)),
+        teams: teams.premier.map((team) => generateTeam(team, 0)),
         tier: 0,
         size: 20,
         promotion: { automatic: [], playoff: [], tier: null },
@@ -21,7 +22,7 @@ let leagues = [
         ],
     }),
     new League({
-        teams: teams.championship.map((team) => generateTeam(team.name, 1)),
+        teams: teams.championship.map((team) => generateTeam(team, 1)),
         tier: 1,
         size: 24,
         promotion: { automatic: [1, 2], playoff: [3, 4, 5, 6], tier: 0 },
@@ -32,7 +33,7 @@ let leagues = [
         ],
     }),
     new League({
-        teams: teams.league1.map((team) => generateTeam(team.name, 2)),
+        teams: teams.league1.map((team) => generateTeam(team, 2)),
         tier: 2,
         promotion: { automatic: [1, 2], playoff: [3, 4, 5, 6], tier: 1 },
         relegation: { automatic: [21, 22, 23, 24], playoff: [], tier: 3 },
@@ -42,7 +43,7 @@ let leagues = [
         ],
     }),
     new League({
-        teams: teams.league2.map((team) => generateTeam(team.name, 3)),
+        teams: teams.league2.map((team) => generateTeam(team, 3)),
         tier: 3,
         size: 24,
         promotion: { automatic: [1, 2, 3], playoff: [4, 5, 6, 7], tier: 2 },
@@ -129,13 +130,16 @@ function newSeason() {
         let relegationTier = null;
 
         if (league.promotion.tier !== null) {
-            promotionTier = leagues.find((x) => x.tier === league.promotion.tier);
+            promotionTier = leagues.find(
+                (x) => x.tier === league.promotion.tier
+            );
         }
 
         if (league.relegation.tier !== null) {
-            relegationTier = leagues.find((x) => x.tier === league.relegation.tier);
+            relegationTier = leagues.find(
+                (x) => x.tier === league.relegation.tier
+            );
         }
-
 
         if (league.promotion.automatic) {
             promoted = league.promotion.automatic.map((x) => standings[x - 1]);
@@ -185,16 +189,16 @@ function newSeason() {
 
         // Promotions
         if (promotionTier) {
-            league.teams = league.teams.filter((team) =>
-                !promoted.includes(team)
+            league.teams = league.teams.filter(
+                (team) => !promoted.includes(team)
             );
             promotionTier.teams = promotionTier.teams.concat(promoted);
         }
 
         // Relegations
         if (relegationTier) {
-            league.teams = league.teams.filter((team) =>
-                !relegated.includes(team)
+            league.teams = league.teams.filter(
+                (team) => !relegated.includes(team)
             );
             relegationTier.teams = relegationTier.teams.concat(relegated);
         }
@@ -220,6 +224,9 @@ function newSeason() {
 function setTeamIndex() {
     yourTeamLeagueIndex = leagues.findIndex((league) =>
         league.teams.some((team) => team.name === yourTeamName)
+    );
+    yourTeamIndex = leagues[yourTeamLeagueIndex].teams.findIndex(
+        (team) => team.name === yourTeamName
     );
 }
 

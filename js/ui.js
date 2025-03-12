@@ -2,8 +2,12 @@
 let uiCurrentHistoryDay = 0;
 let uiCurrentFutureDay = 0;
 
-function showTeamPopup(teamIndex) {
-    let league = leagues[yourTeamLeagueIndex];
+function showMyTeamPopup() {
+    showTeamPopup(yourTeamLeagueIndex, yourTeamIndex);
+}
+
+function showTeamPopup(leagueIndex, teamIndex) {
+    let league = leagues[leagueIndex];
     let team = league.teams[teamIndex];
     let popup = document.getElementById('team-popup');
     let overlay = document.getElementById('popup-overlay');
@@ -18,7 +22,7 @@ function showTeamPopup(teamIndex) {
         <p><strong>Average Starting XI Rating:</strong> ${avgRating}</p>
         <p><strong>Budget:</strong> £${team.budget.toFixed(1)}M</p>
         <p><strong>Weekly Wage Bill:</strong> £${team.wageBill}K</p>
-        <p><strong>Stadium Capacity:</strong> ${team.stadiumCapacity}</p>
+        <p><strong>Stadium:</strong> ${team.stadium.name} (${team.stadium.capacity})</p>
         <p><strong>Popularity:</strong> ${team.popularity}</p>
         <table>
             <thead>
@@ -39,7 +43,7 @@ function showTeamPopup(teamIndex) {
     team.players.slice(0, 11).forEach((player, index) => {
         html += `
             <tr>
-                <td><span class="player-link" onclick="showPlayerPopup('team', ${teamIndex}, ${index})">${player.name}</span></td>
+                <td><span class="player-link" onclick="showPlayerPopup('team', ${leagueIndex}, ${teamIndex}, ${index})">${player.name}</span></td>
                 <td>${player.position}</td>
                 <td>${player.getAverageSkill().toFixed(1)}</td>
                 <td>${player.age}</td>
@@ -57,7 +61,7 @@ function showTeamPopup(teamIndex) {
     team.players.slice(11, 16).forEach((player, index) => {
         html += `
             <tr>
-                <td><span class="player-link" onclick="showPlayerPopup('team', ${teamIndex}, ${index + 11})">${player.name}</span></td>
+                <td><span class="player-link" onclick="showPlayerPopup('team', ${leagueIndex}, ${teamIndex}, ${index + 11})">${player.name}</span></td>
                 <td>${player.position}</td>
                 <td>${player.getAverageSkill().toFixed(1)}</td>
                 <td>${player.age}</td>
@@ -75,7 +79,7 @@ function showTeamPopup(teamIndex) {
     team.players.slice(16).forEach((player, index) => {
         html += `
             <tr>
-                <td><span class="player-link" onclick="showPlayerPopup('team', ${teamIndex}, ${index + 16})">${player.name}</span></td>
+                <td><span class="player-link" onclick="showPlayerPopup('team', ${leagueIndex}, ${teamIndex}, ${index + 16})">${player.name}</span></td>
                 <td>${player.position}</td>
                 <td>${player.getAverageSkill().toFixed(1)}</td>
                 <td>${player.age}</td>
@@ -128,7 +132,7 @@ function showTransferPopup() {
         transferList.forEach((player, index) => {
             html += `
                 <tr>
-                    <td><span class="player-link" onclick="showPlayerPopup('transfer', ${index})">${player.name}</span></td>
+                    <td><span class="player-link" onclick="showPlayerPopup('transfer', -1, ${index})">${player.name}</span></td>
                     <td>${player.position}</td>
                     <td>${player.getAverageSkill().toFixed(1)}</td>
                     <td>${player.age}</td>
@@ -149,14 +153,14 @@ function hideTransferPopup() {
     document.getElementById('popup-overlay').style.display = 'none';
 }
 
-function showPlayerPopup(source, index1, index2 = null) {
+function showPlayerPopup(source, leagueIndex, index1, index2 = null) {
     let player, teamIndex, playerIndex, isYourTeam;
     if (source === 'team') {
         teamIndex = index1;
         playerIndex = index2;
-        player =
-            leagues[yourTeamLeagueIndex].teams[teamIndex].players[playerIndex];
-        isYourTeam = teamIndex === 0;
+        player = leagues[leagueIndex].teams[teamIndex].players[playerIndex];
+        isYourTeam =
+            leagueIndex === yourTeamLeagueIndex && teamIndex === yourTeamIndex;
     } else if (source === 'transfer') {
         playerIndex = index1;
         player = transferList[playerIndex];
@@ -412,7 +416,7 @@ function showTablePopup(leagueIndex = yourTeamLeagueIndex) {
         if (team.name === yourTeamName) rowClass = 'your-team';
         tableHTML += `
             <tr class="${rowClass}">
-                <td class="team-column"><span class="team-link" onclick="showTeamPopup(${index});hideTablePopup()">${team.name}</span></td>
+                <td class="team-column"><span class="team-link" onclick="showTeamPopup(${leagueIndex}, ${index});hideTablePopup()">${team.name}</span></td>
                 <td>${team.played}</td>
                 <td>${team.wins}</td>
                 <td>${team.draws}</td>
