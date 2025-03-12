@@ -6,6 +6,7 @@ let currentFutureDay = 0;
 let transferList = [];
 let seasonNumber = 1;
 let currentResultLeague = 0;
+let currentMatchDay = 0;
 
 let leagues = [
     new League({
@@ -64,14 +65,15 @@ function nextAction() {
 function simulateMatchDay() {
     leagues.forEach((league) => league.simulateMatchDay());
     currentHistoryDay = currentHistoryDay++;
+    currentMatchDay++;
+    currentResultLeague = yourTeamLeagueIndex;
     displayMatchDayResults();
     setNextActionButtonText();
 }
 
 function displayMatchDayResults() {
     let resultDiv = document.getElementById('match-result');
-    let matchDay = leagues[yourTeamLeagueIndex].matchDay;
-    resultDiv.innerHTML = `<h3>Season ${seasonNumber} - Match Day ${matchDay} Results:</h3>`;
+    resultDiv.innerHTML = `<h3>Season ${seasonNumber} - Match Day ${currentMatchDay} Results:</h3>`;
     resultDiv.innerHTML += `
         <div class="league-tabs">
             <button onclick="currentResultLeague=0;displayMatchDayResults()">Premier League</button>
@@ -123,12 +125,17 @@ function newSeason() {
         let promoted = [];
         let relegated = [];
         let playoff = [];
-        const promotionTier = league.promotion.tier
-            ? leagues.find((x) => x.tier === league.promotion.tier)
-            : null;
-        const relegationTier = league.relegation.tier
-            ? leagues.find((x) => x.tier === league.relegation.tier)
-            : null;
+        let promotionTier = null;
+        let relegationTier = null;
+
+        if (league.promotion.tier !== null) {
+            promotionTier = leagues.find((x) => x.tier === league.promotion.tier);
+        }
+
+        if (league.relegation.tier !== null) {
+            relegationTier = leagues.find((x) => x.tier === league.relegation.tier);
+        }
+
 
         if (league.promotion.automatic) {
             promoted = league.promotion.automatic.map((x) => standings[x - 1]);
@@ -179,7 +186,7 @@ function newSeason() {
         // Promotions
         if (promotionTier) {
             league.teams = league.teams.filter((team) =>
-                promoted.includes(team)
+                !promoted.includes(team)
             );
             promotionTier.teams = promotionTier.teams.concat(promoted);
         }
@@ -187,7 +194,7 @@ function newSeason() {
         // Relegations
         if (relegationTier) {
             league.teams = league.teams.filter((team) =>
-                relegated.includes(team)
+                !relegated.includes(team)
             );
             relegationTier.teams = relegationTier.teams.concat(relegated);
         }
@@ -203,6 +210,7 @@ function newSeason() {
     currentFutureDay = 0;
     generateTransferList();
     seasonNumber++;
+    currentMatchDay = 0;
     let resultDiv = document.getElementById('match-result');
     resultDiv.innerHTML = `<h3>Season ${seasonNumber} Started!</h3>`;
     hideAllPopups();
