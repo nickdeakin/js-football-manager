@@ -9,53 +9,14 @@ let seasonNumber = 1;
 let currentResultLeague = 0;
 let currentMatchDay = 0;
 
-let leagues = [
-    new League({
-        teams: defaultTeams.premier.map((team) => generateTeam(team, 0)),
-        tier: 0,
-        size: 20,
-        promotion: { automatic: [], playoff: [], tier: null },
-        relegation: { automatic: [18, 19, 20], playoff: [], tier: 1 },
-        prizeMoney: [
-            50, 45, 40, 35, 30, 28, 26, 24, 22, 20, 18, 16, 14, 12, 10, 9, 8, 7,
-            6, 5,
-        ],
-    }),
-    new League({
-        teams: defaultTeams.championship.map((team) => generateTeam(team, 1)),
-        tier: 1,
-        size: 24,
-        promotion: { automatic: [1, 2], playoff: [3, 4, 5, 6], tier: 0 },
-        relegation: { automatic: [22, 23, 24], playoff: [], tier: 2 },
-        prizeMoney: [
-            20, 18, 16, 14, 12, 10, 9, 8, 7, 6, 5, 4, 3, 2.5, 2, 1.9, 1.8, 1.7,
-            1.6, 1.5, 1.4, 1.3, 1.2, 1.1,
-        ],
-    }),
-    new League({
-        teams: defaultTeams.league1.map((team) => generateTeam(team, 2)),
-        tier: 2,
-        promotion: { automatic: [1, 2], playoff: [3, 4, 5, 6], tier: 1 },
-        relegation: { automatic: [21, 22, 23, 24], playoff: [], tier: 3 },
-        prizeMoney: [
-            10, 9, 8, 7, 6, 5, 4.5, 4, 3.5, 3, 2.5, 2, 1.8, 1.6, 1.5, 1.4, 1.3,
-            1.2, 1.1, 1, 1, 1, 1, 1,
-        ],
-    }),
-    new League({
-        teams: defaultTeams.league2.map((team) => generateTeam(team, 3)),
-        tier: 3,
-        size: 24,
-        promotion: { automatic: [1, 2, 3], playoff: [4, 5, 6, 7], tier: 2 },
-        relegation: { automatic: [23, 24], playoff: [], tier: null },
-        prizeMoney: [
-            5, 4.5, 4, 3.5, 3, 2.5, 2, 1.8, 1.6, 1.4, 1.2, 1, 1, 1, 1, 1, 1, 1,
-            1,
-        ],
-    }),
-];
+let leagues = defaultLeagues.map(league => new League(league));
+leagues.forEach(league => {
+    league.teams = defaultTeams.filter(team => team.league === league.id).map(team => generateTeam(team, league.id));
+    league.matchDays = league.generateMatchDays();
+});
 
-let teams = defaultTeams.map(league => league.teams.map((team) => generateTeam(team, 0)));
+let allTeams = new Map();
+leagues.forEach(l => l.teams.forEach(t => allTeams.set(t.id,t)));
 
 function nextAction() {
     if (leagues.every((league) => league.isSeasonOver())) {
@@ -128,36 +89,34 @@ function newSeason() {
         let promoted = [];
         let relegated = [];
         let playoff = [];
-        let promotionTier = null;
-        let relegationTier = null;
+        let promotionTarget = null;
+        let relegationTarget = null;
 
-        if (league.promotion.tier !== null) {
-            promotionTier = leagues.find(
-                (x) => x.tier === league.promotion.tier
+        if (league.promotion !== null) {
+            promotionTarget = leagues.find(
+                (x) => x.id === league.promotion.id
             );
+            if (league.promotion.automatic) {
+                promoted = league.promotion.automatic.map((x) => standings[x - 1]);
+            }
+            if (league.promotion.playoff) {
+                playoff = league.promotion.playoff.map((x) => standings[x - 1]);
+            }
+            if (playoff.length > 0) {
+                let playoffWinner = simulatePlayoff(playoff);
+                promoted.push(playoffWinner);
+            }
         }
 
-        if (league.relegation.tier !== null) {
-            relegationTier = leagues.find(
-                (x) => x.tier === league.relegation.tier
+        if (league.relegation !== null) {
+            relegationTarget = leagues.find(
+                (x) => x.id === league.relegation.id
             );
-        }
-
-        if (league.promotion.automatic) {
-            promoted = league.promotion.automatic.map((x) => standings[x - 1]);
-        }
-        if (league.promotion.playoff) {
-            playoff = league.promotion.playoff.map((x) => standings[x - 1]);
-        }
-        if (league.relegation.automatic) {
-            relegated = league.relegation.automatic.map(
-                (x) => standings[x - 1]
-            );
-        }
-
-        if (playoff.length > 0) {
-            let playoffWinner = simulatePlayoff(playoff);
-            promoted.push(playoffWinner);
+            if (league.relegation.automatic) {
+                relegated = league.relegation.automatic.map(
+                    (x) => standings[x - 1]
+                );
+            }
         }
 
         standings.forEach((team, index) => {
@@ -190,19 +149,19 @@ function newSeason() {
         });
 
         // Promotions
-        if (promotionTier) {
+        if (promotionTarget) {
             league.teams = league.teams.filter(
                 (team) => !promoted.includes(team)
             );
-            promotionTier.teams = promotionTier.teams.concat(promoted);
+            promotionTarget.teams = promotionTarget.teams.concat(promoted);
         }
 
         // Relegations
-        if (relegationTier) {
+        if (relegationTarget) {
             league.teams = league.teams.filter(
                 (team) => !relegated.includes(team)
             );
-            relegationTier.teams = relegationTier.teams.concat(relegated);
+            relegationTarget.teams = relegationTarget.teams.concat(relegated);
         }
     });
 
@@ -217,6 +176,10 @@ function newSeason() {
     generateTransferList();
     seasonNumber++;
     currentMatchDay = 0;
+
+    allTeams = new Map();
+    leagues.forEach(l => l.teams.forEach(t => allTeams.set(t.id,t)));
+
     let resultDiv = document.getElementById('match-result');
     resultDiv.innerHTML = `<h3>Season ${seasonNumber} Started!</h3>`;
     hideAllPopups();
@@ -243,13 +206,13 @@ function saveGame() {
         currentHistoryDay,
         currentFutureDay,
         currentResultLeague,
-        currentMatchDay
+        currentMatchDay,
     };
 
     const jsonString = JSON.stringify(gameState, null, 2); // Pretty-print for readability
-    const blob = new Blob([jsonString], { type: "application/json" });
+    const blob = new Blob([jsonString], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
+    const a = document.createElement('a');
     a.href = url;
     a.download = `football-manager-save-${seasonNumber}.json`; // Dynamic filename
     document.body.appendChild(a);
@@ -262,14 +225,16 @@ function loadGame() {
     const file = event.target.files[0];
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = function(e) {
+    reader.onload = function (e) {
         try {
             const save = JSON.parse(e.target.result);
-            leagues = save.leagues.map(l => Object.assign(new League(l), l));
-            leagues.forEach(l => {
-                l.teams = l.teams.map(t => Object.assign(new Team(t), t));
-                l.teams.forEach(t => {
-                    t.players.map(p => Object.assign(new Player(), p)).forEach(p => t.players.push(t));
+            leagues = save.leagues.map((l) => Object.assign(new League(l), l));
+            leagues.forEach((l) => {
+                l.teams = l.teams.map((t) => Object.assign(new Team(t), t));
+                l.teams.forEach((t) => {
+                    t.players
+                        .map((p) => Object.assign(new Player(), p))
+                        .forEach((p) => t.players.push(t));
                 });
             });
             yourTeamName = save.yourTeamName;
@@ -280,11 +245,16 @@ function loadGame() {
             currentFutureDay = save.currentFutureDay;
             currentResultLeague = save.currentResultLeague;
             currentMatchDay = save.currentMatchDay;
-            transferList = save.transferList.map(p => Object.assign(new Player(), p));
+            transferList = save.transferList.map((p) =>
+                Object.assign(new Player(), p)
+            );
+            allTeams = new Map();
+            leagues.forEach(l => l.teams.forEach(t => allTeams.set(t.id,t)));
             setNextActionButtonText(); // Update UI
-            document.getElementById('match-result').innerHTML = `<h3>Loaded Season ${seasonNumber}</h3>`;
+            document.getElementById('match-result').innerHTML =
+                `<h3>Loaded Season ${seasonNumber}</h3>`;
         } catch (err) {
-            alert("Error loading save file: " + err.message);
+            alert('Error loading save file: ' + err.message);
         }
     };
     reader.readAsText(file);

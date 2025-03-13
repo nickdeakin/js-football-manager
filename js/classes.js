@@ -17,11 +17,19 @@ class Player {
 }
 
 class Team {
-    constructor({id, name, formation, leagueTier, stadium, popularity, budget}) {
+    constructor({
+        id,
+        name,
+        formation,
+        league,
+        stadium,
+        popularity,
+        budget,
+    }) {
         this.id = id;
         this.name = name;
         this.formation = formation;
-        this.leagueTier = leagueTier;
+        this.league = league;
         this.stadium = stadium;
         this.popularity = popularity;
         this.budget = budget;
@@ -85,54 +93,49 @@ class Team {
 }
 
 class Match {
-    constructor(team1, team2) {
-        this.team1 = team1;
-        this.team2 = team2;
-    }
-
-    simulate() {
-        let skill1 = this.team1.getTeamSkill();
-        let skill2 = this.team2.getTeamSkill();
+    simulate({home: home, away: away, league: league}) {
+        let skill1 = home.getTeamSkill();
+        let skill2 = away.getTeamSkill();
         let score1 = Math.floor(Math.random() * 5 * (skill1 / 100));
         let score2 = Math.floor(Math.random() * 5 * (skill2 / 100));
 
-        this.team1.played++;
-        this.team2.played++;
+        home.played++;
+        away.played++;
         if (score1 > score2) {
-            this.team1.points += 3;
-            this.team1.wins++;
-            this.team2.losses++;
-            this.team1.popularity = Math.min(this.team1.popularity + 2, 100);
-            this.team2.popularity = Math.max(this.team2.popularity - 1, 0);
+            home.points += 3;
+            home.wins++;
+            away.losses++;
+            home.popularity = Math.min(home.popularity + 2, 100);
+            away.popularity = Math.max(away.popularity - 1, 0);
         } else if (score2 > score1) {
-            this.team2.points += 3;
-            this.team2.wins++;
-            this.team1.losses++;
-            this.team2.popularity = Math.min(this.team2.popularity + 2, 100);
-            this.team1.popularity = Math.max(this.team1.popularity - 1, 0);
+            away.points += 3;
+            away.wins++;
+            home.losses++;
+            away.popularity = Math.min(away.popularity + 2, 100);
+            home.popularity = Math.max(home.popularity - 1, 0);
         } else {
-            this.team1.points += 1;
-            this.team2.points += 1;
-            this.team1.draws++;
-            this.team2.draws++;
+            home.points += 1;
+            away.points += 1;
+            home.draws++;
+            away.draws++;
         }
 
         const ticketPrice = 20;
         const attendance = Math.min(
             Math.floor(
-                ((this.team1.popularity + this.team2.popularity) / 200) *
-                    this.team1.stadium.capacity
+                ((home.popularity + away.popularity) / 200) *
+                home.stadium.capacity
             ),
-            this.team1.stadium.capacity
+            home.stadium.capacity
         );
         const totalIncome = (attendance * ticketPrice) / 1000000;
         const splitIncome = totalIncome / 2;
-        this.team1.budget += splitIncome;
-        this.team2.budget += splitIncome;
+        home.budget += splitIncome;
+        away.budget += splitIncome;
 
         return {
-            homeTeam: this.team1.name,
-            awayTeam: this.team2.name,
+            homeTeam: home.name,
+            awayTeam: away.name,
             homeScore: score1,
             awayScore: score2,
             attendance: attendance,
@@ -141,13 +144,16 @@ class Match {
 }
 
 class League {
-    constructor({ id, teams, tier, promotion, relegation, prizeMoney }) {
+    constructor({ id, teams, tier, size, country, win, promotion, relegation, prizeMoney }) {
         this.id = id;
-        this.teams = teams;
+        this.teams = teams ?? [];
         this.tier = tier;
+        this.size = size;
+        this.country = country;
         this.matchDay = 0;
-        this.matchDays = this.generateMatchDays();
+        this.matchDays = [];
         this.history = [];
+        this.win = win;
         this.promotion = promotion;
         this.relegation = relegation;
         this.prizeMoney = prizeMoney;
@@ -170,7 +176,7 @@ class League {
                 let team1 = teamIndices[i];
                 let team2 = teamIndices[n - 1 - i];
                 if (!usedTeams.has(team1) && !usedTeams.has(team2)) {
-                    dayFixtures.push([this.teams[team1], this.teams[team2]]);
+                    dayFixtures.push({ home: this.teams[team1].id, away: this.teams[team2].id, league: this.id });
                     usedTeams.add(team1);
                     usedTeams.add(team2);
                 }
@@ -186,7 +192,6 @@ class League {
                 [day[i], day[j]] = [day[j], day[i]];
             }
         });
-
         return matchDays;
     }
 
@@ -205,8 +210,11 @@ class League {
         let results = [];
         let todayFixtures = this.matchDays[this.matchDay];
         for (let fixture of todayFixtures) {
-            let match = new Match(fixture[0], fixture[1]);
-            results.push(match.simulate());
+            let match = new Match();
+            results.push(match.simulate({
+                home: allTeams.get(fixture.home),
+                away: allTeams.get(fixture.away),
+                league: fixture.league}));
         }
         this.teams.forEach((team) => {
             team.budget -= team.wageBill / 1000;
