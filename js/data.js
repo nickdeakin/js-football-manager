@@ -1,4 +1,4 @@
-const teams = {
+const defaultTeams = {
     premier: [
         {
             name: 'AFC Bournemouth',

@@ -17,7 +17,8 @@ class Player {
 }
 
 class Team {
-    constructor(name, formation, leagueTier, stadium, popularity, budget) {
+    constructor({id, name, formation, leagueTier, stadium, popularity, budget}) {
+        this.id = id;
         this.name = name;
         this.formation = formation;
         this.leagueTier = leagueTier;
@@ -140,7 +141,8 @@ class Match {
 }
 
 class League {
-    constructor({ teams, tier, promotion, relegation, prizeMoney }) {
+    constructor({ id, teams, tier, promotion, relegation, prizeMoney }) {
+        this.id = id;
         this.teams = teams;
         this.tier = tier;
         this.matchDay = 0;

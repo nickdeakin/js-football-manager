@@ -56,12 +56,14 @@ function generateTeam(teamObject, leagueTier) {
                 (budgetRanges[leagueTier][1] - budgetRanges[leagueTier][0] + 1)
         ) + budgetRanges[leagueTier][0];
     let team = new Team(
-        teamObject.name,
-        formation.name,
-        leagueTier,
-        teamObject.stadium,
-        popularity,
-        budget
+        {
+            name: teamObject.name,
+            formation: formation.name,
+            leagueTier,
+            stadium: teamObject.stadium,
+            popularity: popularity,
+            budget
+        }
     );
     const skills = skillRanges[leagueTier];
 

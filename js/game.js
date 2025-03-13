@@ -11,7 +11,7 @@ let currentMatchDay = 0;
 
 let leagues = [
     new League({
-        teams: teams.premier.map((team) => generateTeam(team, 0)),
+        teams: defaultTeams.premier.map((team) => generateTeam(team, 0)),
         tier: 0,
         size: 20,
         promotion: { automatic: [], playoff: [], tier: null },
@@ -22,7 +22,7 @@ let leagues = [
         ],
     }),
     new League({
-        teams: teams.championship.map((team) => generateTeam(team, 1)),
+        teams: defaultTeams.championship.map((team) => generateTeam(team, 1)),
         tier: 1,
         size: 24,
         promotion: { automatic: [1, 2], playoff: [3, 4, 5, 6], tier: 0 },
@@ -33,7 +33,7 @@ let leagues = [
         ],
     }),
     new League({
-        teams: teams.league1.map((team) => generateTeam(team, 2)),
+        teams: defaultTeams.league1.map((team) => generateTeam(team, 2)),
         tier: 2,
         promotion: { automatic: [1, 2], playoff: [3, 4, 5, 6], tier: 1 },
         relegation: { automatic: [21, 22, 23, 24], playoff: [], tier: 3 },
@@ -43,7 +43,7 @@ let leagues = [
         ],
     }),
     new League({
-        teams: teams.league2.map((team) => generateTeam(team, 3)),
+        teams: defaultTeams.league2.map((team) => generateTeam(team, 3)),
         tier: 3,
         size: 24,
         promotion: { automatic: [1, 2, 3], playoff: [4, 5, 6, 7], tier: 2 },
@@ -54,6 +54,8 @@ let leagues = [
         ],
     }),
 ];
+
+let teams = defaultTeams.map(league => league.teams.map((team) => generateTeam(team, 0)));
 
 function nextAction() {
     if (leagues.every((league) => league.isSeasonOver())) {
@@ -231,39 +233,61 @@ function setTeamIndex() {
 }
 
 function saveGame() {
-    localStorage.setItem(
-        'footballManagerSave',
-        JSON.stringify({
-            leagues,
-            yourTeamName,
-            yourTeamLeagueIndex,
-            seasonNumber,
-            transferList,
-        })
-    );
+    const gameState = {
+        leagues,
+        yourTeamName,
+        yourTeamLeagueIndex,
+        seasonNumber,
+        transferList,
+        yourTeamIndex,
+        currentHistoryDay,
+        currentFutureDay,
+        currentResultLeague,
+        currentMatchDay
+    };
+
+    const jsonString = JSON.stringify(gameState, null, 2); // Pretty-print for readability
+    const blob = new Blob([jsonString], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `football-manager-save-${seasonNumber}.json`; // Dynamic filename
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url); // Clean up
 }
+
 function loadGame() {
-    const save = JSON.parse(localStorage.getItem('footballManagerSave'));
-    if (save) {
-        leagues = save.leagues.map((l) =>
-            Object.assign(new League([], l.tier), l)
-        );
-        leagues.forEach((l) => {
-            l.teams = l.teams.map((t) => Object.assign(new Team(), t));
-            l.teams.forEach(
-                (t) =>
-                    (t.players = t.players.map((p) =>
-                        Object.assign(new Player(), p)
-                    ))
-            );
-        });
-        yourTeamName = save.yourTeamName;
-        yourTeamLeagueIndex = save.yourTeamLeagueIndex;
-        seasonNumber = save.seasonNumber;
-        transferList = save.transferList.map((p) =>
-            Object.assign(new Player(), p)
-        );
-    }
+    const file = event.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        try {
+            const save = JSON.parse(e.target.result);
+            leagues = save.leagues.map(l => Object.assign(new League(l), l));
+            leagues.forEach(l => {
+                l.teams = l.teams.map(t => Object.assign(new Team(t), t));
+                l.teams.forEach(t => {
+                    t.players.map(p => Object.assign(new Player(), p)).forEach(p => t.players.push(t));
+                });
+            });
+            yourTeamName = save.yourTeamName;
+            yourTeamLeagueIndex = save.yourTeamLeagueIndex;
+            seasonNumber = save.seasonNumber;
+            yourTeamIndex = save.yourTeamIndex;
+            currentHistoryDay = save.currentHistoryDay;
+            currentFutureDay = save.currentFutureDay;
+            currentResultLeague = save.currentResultLeague;
+            currentMatchDay = save.currentMatchDay;
+            transferList = save.transferList.map(p => Object.assign(new Player(), p));
+            setNextActionButtonText(); // Update UI
+            document.getElementById('match-result').innerHTML = `<h3>Loaded Season ${seasonNumber}</h3>`;
+        } catch (err) {
+            alert("Error loading save file: " + err.message);
+        }
+    };
+    reader.readAsText(file);
 }
 
 // TODO: Disabled for now

@@ -151,3 +151,9 @@ button:hover {
         width: 90%;
     }
 }
+
+#load-game-input {
+    padding: 5px;
+    margin: 2px;
+    vertical-align: middle;
+}
