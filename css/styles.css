@@ -79,34 +79,36 @@ tr:nth-child(odd) {
 }
 tr.champions {
     background-color: #ffd700;
-    border-top: 2px solid #b8860b;
+    border-bottom: 2px solid #b8860b;
 }
-tr.euro-league {
+tr.champions-league {
     background-color: #d4edda;
 }
-tr.euro-league:last-child {
+tr.champions-league.__last {
     border-bottom: 2px solid #28a745;
 }
-tr.secondary-euro {
+tr.europa-league {
     background-color: #cce5ff;
 }
-tr.secondary-euro:last-child {
+tr.europa-league.__last {
     border-bottom: 2px solid #007bff;
 }
 tr.auto-promotion {
     background-color: #d4edda;
-    border-top: 2px solid #28a745;
+}
+tr.auto-promotion.__last {
+    border-bottom: 2px solid #28a745;
 }
 tr.playoff {
     background-color: #fff3cd;
 }
-tr.playoff:last-child {
+tr.playoff.__last {
     border-bottom: 2px solid #ffc107;
 }
 tr.relegation {
     background-color: #f8d7da;
 }
-tr.relegation:first-child {
+tr.relegation.__first {
     border-top: 2px solid #dc3545;
 }
 tr.your-team {
@@ -150,4 +152,10 @@ button:hover {
     #player-popup {
         width: 90%;
     }
+}
+
+#load-game-input {
+    padding: 5px;
+    margin: 2px;
+    vertical-align: middle;
 }

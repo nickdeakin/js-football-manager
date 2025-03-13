@@ -17,6 +17,14 @@
             <button onclick="showResultsPopup()">Results</button>
             <button onclick="showFixturesPopup()">Fixtures</button>
             <button onclick="showTablePopup()">League Table</button>
+            <button onclick="saveGame()">Save Game</button>
+            <input
+                type="file"
+                id="load-game-input"
+                accept=".json"
+                onchange="loadGame(event)"
+                style="display: inline-block"
+            />
         </div>
         <div id="match-result"></div>
         <div id="popup-overlay" onclick="hideAllPopups()"></div>

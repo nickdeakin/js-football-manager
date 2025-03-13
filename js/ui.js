@@ -396,21 +396,65 @@ function showTablePopup(leagueIndex = yourTeamLeagueIndex) {
     standings.forEach((team, index) => {
         const position = index + 1;
         let rowClass = '';
-        if (league.tier === 0) {
-            if (position === 1) rowClass = 'champions';
-            else if (position < 5) rowClass = 'euro-league';
-            else if (position < 7) rowClass = 'secondary-euro';
-            else if (position >= 18) rowClass = 'relegation';
+        if (league.win) {
+            if (league.win.champions.indexOf(position) > -1) {
+                rowClass = 'champions';
+                if (
+                    league.win.champions[league.win.champions.length - 1] ===
+                    position
+                ) {
+                    rowClass += ' __last';
+                }
+            }
+            if (league.win.championsLeague.indexOf(position) > -1) {
+                rowClass = 'champions-league';
+                if (
+                    league.win.championsLeague[
+                        league.win.championsLeague.length - 1
+                    ] === position
+                ) {
+                    rowClass += ' __last';
+                }
+            }
+            if (league.win.europaLeague.indexOf(position) > -1) {
+                rowClass = 'europa-league';
+                if (
+                    league.win.europaLeague[
+                        league.win.europaLeague.length - 1
+                    ] === position
+                ) {
+                    rowClass += ' __last';
+                }
+            }
         }
-        if (league.tier > 0) {
+        if (league.promotion) {
             if (league.promotion.automatic.indexOf(position) > -1) {
                 rowClass = 'auto-promotion';
+                if (
+                    league.promotion.automatic[
+                        league.promotion.automatic.length - 1
+                    ] === position
+                ) {
+                    rowClass += ' __last';
+                }
             }
             if (league.promotion.playoff.indexOf(position) > -1) {
                 rowClass = 'playoff';
+                if (
+                    league.promotion.playoff[
+                        league.promotion.playoff.length - 1
+                    ] === position
+                ) {
+                    rowClass += ' __last';
+                }
             }
+        }
+        if (league.relegation) {
             if (league.relegation.automatic.indexOf(position) > -1) {
                 rowClass = 'relegation';
+                if (league.relegation.automatic[0] === position) {
+                    rowClass += ' __first';
+                }
             }
         }
         if (team.name === yourTeamName) rowClass = 'your-team';
@@ -451,5 +495,7 @@ window.onload = function () {
     document.getElementById('match-result').innerHTML =
         `<h3>Welcome to Football Manager - Season ${seasonNumber}</h3>`;
     setTeamIndex();
-    setNextActionButtonText();
+    setTimeout(() => {
+        setNextActionButtonText();
+    });
 };

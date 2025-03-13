@@ -26,44 +26,35 @@ function generateSkills(min, max) {
     };
 }
 
-function generateTeam(teamObject, leagueTier) {
+function generateTeam(teamObject, league) {
     const formation = formations[Math.floor(Math.random() * formations.length)];
 
-    const budgetRanges = [
-        [50, 250], // Premier League
-        [10, 100], // Championship
-        [5, 25], // League One
-        [0, 10], // League Two
-    ];
-    const skillRanges = [
-        { xi: [70, 100], sub: [60, 90], res: [50, 80] }, // Premier League
-        { xi: [60, 90], sub: [50, 80], res: [40, 70] }, // Championship
-        { xi: [50, 80], sub: [40, 70], res: [30, 60] }, // League One
-        { xi: [40, 70], sub: [30, 60], res: [20, 50] }, // League Two
-    ];
-
+    // TODO: Not happy about this
     const popularity =
-        leagueTier === 0
+        league === 'eng-prem'
             ? Math.floor(Math.random() * 31) + 70
-            : leagueTier === 1
+            : league === 'eng-champ'
               ? Math.floor(Math.random() * 41) + 40
-              : leagueTier === 2
+              : league === 'eng-l1'
                 ? Math.floor(Math.random() * 41) + 30
                 : Math.floor(Math.random() * 41) + 20;
+
+    const budgetRange = budgetRanges.find((x) => x.league === league);
     const budget =
         Math.floor(
-            Math.random() *
-                (budgetRanges[leagueTier][1] - budgetRanges[leagueTier][0] + 1)
-        ) + budgetRanges[leagueTier][0];
-    let team = new Team(
-        teamObject.name,
-        formation.name,
-        leagueTier,
-        teamObject.stadium,
-        popularity,
-        budget
-    );
-    const skills = skillRanges[leagueTier];
+            Math.random() * (budgetRange.range[1] - budgetRange.range[0] + 1)
+        ) + budgetRange.range[0];
+
+    let team = new Team({
+        id: teamObject.id,
+        name: teamObject.name,
+        formation: formation.name,
+        league,
+        stadium: teamObject.stadium,
+        popularity: popularity,
+        budget,
+    });
+    const skills = skillRanges.find((x) => x.league === league);
 
     team.addPlayer(
         new Player(
@@ -264,10 +255,10 @@ function generateYouthPlayer(position) {
 }
 
 function simulatePlayoff(teams) {
-    let semi1 = new Match(teams[0], teams[3]).simulate();
-    let semi2 = new Match(teams[1], teams[2]).simulate();
+    let semi1 = new Match().simulate({ home: teams[0], away: teams[3] });
+    let semi2 = new Match().simulate({ home: teams[1], away: teams[2] });
     let winner1 = semi1.homeScore > semi1.awayScore ? teams[0] : teams[3];
     let winner2 = semi2.homeScore > semi2.awayScore ? teams[1] : teams[2];
-    let final = new Match(winner1, winner2).simulate();
+    let final = new Match().simulate({ home: winner1, away: winner2 });
     return final.homeScore > final.awayScore ? winner1 : winner2;
 }
