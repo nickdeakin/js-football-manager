@@ -8,7 +8,7 @@ const defaultLeagues = [
         win: {
             champions: [1],
             championsLeague: [2, 3, 4],
-            europaLeague: [5, 6]
+            europaLeague: [5, 6],
         },
         promotion: null,
         relegation: { automatic: [18, 19, 20], playoff: [], id: 'eng-champ' },
@@ -700,10 +700,10 @@ const formations = [
 ];
 
 const budgetRanges = [
-    { league: 'eng-prem', range: [50, 250]}, // Premier League
-    { league: 'eng-champ', range: [10, 100]}, // Championship
-    { league: 'eng-l1', range: [5, 25]}, // League One
-    { league: 'eng-l2', range: [0, 10]}, // League Two
+    { league: 'eng-prem', range: [50, 250] }, // Premier League
+    { league: 'eng-champ', range: [10, 100] }, // Championship
+    { league: 'eng-l1', range: [5, 25] }, // League One
+    { league: 'eng-l2', range: [0, 10] }, // League Two
 ];
 
 const skillRanges = [

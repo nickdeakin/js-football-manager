@@ -39,11 +39,10 @@ function generateTeam(teamObject, league) {
                 ? Math.floor(Math.random() * 41) + 30
                 : Math.floor(Math.random() * 41) + 20;
 
-    const budgetRange = budgetRanges.find(x => x.league === league);
+    const budgetRange = budgetRanges.find((x) => x.league === league);
     const budget =
         Math.floor(
-            Math.random() *
-                (budgetRange.range[1] - budgetRange.range[0] + 1)
+            Math.random() * (budgetRange.range[1] - budgetRange.range[0] + 1)
         ) + budgetRange.range[0];
 
     let team = new Team({
@@ -55,7 +54,7 @@ function generateTeam(teamObject, league) {
         popularity: popularity,
         budget,
     });
-    const skills = skillRanges.find(x => x.league === league);
+    const skills = skillRanges.find((x) => x.league === league);
 
     team.addPlayer(
         new Player(
@@ -257,7 +256,7 @@ function generateYouthPlayer(position) {
 
 function simulatePlayoff(teams) {
     let semi1 = new Match().simulate({ home: teams[0], away: teams[3] });
-    let semi2 = new Match().simulate({ home: teams[1], away: teams[2] } );
+    let semi2 = new Match().simulate({ home: teams[1], away: teams[2] });
     let winner1 = semi1.homeScore > semi1.awayScore ? teams[0] : teams[3];
     let winner2 = semi2.homeScore > semi2.awayScore ? teams[1] : teams[2];
     let final = new Match().simulate({ home: winner1, away: winner2 });

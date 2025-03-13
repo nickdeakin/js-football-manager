@@ -17,15 +17,7 @@ class Player {
 }
 
 class Team {
-    constructor({
-        id,
-        name,
-        formation,
-        league,
-        stadium,
-        popularity,
-        budget,
-    }) {
+    constructor({ id, name, formation, league, stadium, popularity, budget }) {
         this.id = id;
         this.name = name;
         this.formation = formation;
@@ -93,7 +85,7 @@ class Team {
 }
 
 class Match {
-    simulate({home: home, away: away, league: league}) {
+    simulate({ home: home, away: away, league: league }) {
         let skill1 = home.getTeamSkill();
         let skill2 = away.getTeamSkill();
         let score1 = Math.floor(Math.random() * 5 * (skill1 / 100));
@@ -124,7 +116,7 @@ class Match {
         const attendance = Math.min(
             Math.floor(
                 ((home.popularity + away.popularity) / 200) *
-                home.stadium.capacity
+                    home.stadium.capacity
             ),
             home.stadium.capacity
         );
@@ -144,7 +136,17 @@ class Match {
 }
 
 class League {
-    constructor({ id, teams, tier, size, country, win, promotion, relegation, prizeMoney }) {
+    constructor({
+        id,
+        teams,
+        tier,
+        size,
+        country,
+        win,
+        promotion,
+        relegation,
+        prizeMoney,
+    }) {
         this.id = id;
         this.teams = teams ?? [];
         this.tier = tier;
@@ -176,7 +178,11 @@ class League {
                 let team1 = teamIndices[i];
                 let team2 = teamIndices[n - 1 - i];
                 if (!usedTeams.has(team1) && !usedTeams.has(team2)) {
-                    dayFixtures.push({ home: this.teams[team1].id, away: this.teams[team2].id, league: this.id });
+                    dayFixtures.push({
+                        home: this.teams[team1].id,
+                        away: this.teams[team2].id,
+                        league: this.id,
+                    });
                     usedTeams.add(team1);
                     usedTeams.add(team2);
                 }
@@ -211,10 +217,13 @@ class League {
         let todayFixtures = this.matchDays[this.matchDay];
         for (let fixture of todayFixtures) {
             let match = new Match();
-            results.push(match.simulate({
-                home: allTeams.get(fixture.home),
-                away: allTeams.get(fixture.away),
-                league: fixture.league}));
+            results.push(
+                match.simulate({
+                    home: allTeams.get(fixture.home),
+                    away: allTeams.get(fixture.away),
+                    league: fixture.league,
+                })
+            );
         }
         this.teams.forEach((team) => {
             team.budget -= team.wageBill / 1000;

@@ -399,19 +399,30 @@ function showTablePopup(leagueIndex = yourTeamLeagueIndex) {
         if (league.win) {
             if (league.win.champions.indexOf(position) > -1) {
                 rowClass = 'champions';
-                if (league.win.champions[league.win.champions.length -1] === position) {
+                if (
+                    league.win.champions[league.win.champions.length - 1] ===
+                    position
+                ) {
                     rowClass += ' __last';
                 }
             }
             if (league.win.championsLeague.indexOf(position) > -1) {
                 rowClass = 'champions-league';
-                if (league.win.championsLeague[league.win.championsLeague.length -1] === position) {
+                if (
+                    league.win.championsLeague[
+                        league.win.championsLeague.length - 1
+                    ] === position
+                ) {
                     rowClass += ' __last';
                 }
             }
             if (league.win.europaLeague.indexOf(position) > -1) {
                 rowClass = 'europa-league';
-                if (league.win.europaLeague[league.win.europaLeague.length -1] === position) {
+                if (
+                    league.win.europaLeague[
+                        league.win.europaLeague.length - 1
+                    ] === position
+                ) {
                     rowClass += ' __last';
                 }
             }
@@ -419,13 +430,21 @@ function showTablePopup(leagueIndex = yourTeamLeagueIndex) {
         if (league.promotion) {
             if (league.promotion.automatic.indexOf(position) > -1) {
                 rowClass = 'auto-promotion';
-                if (league.promotion.automatic[league.promotion.automatic.length -1] === position) {
+                if (
+                    league.promotion.automatic[
+                        league.promotion.automatic.length - 1
+                    ] === position
+                ) {
                     rowClass += ' __last';
                 }
             }
             if (league.promotion.playoff.indexOf(position) > -1) {
                 rowClass = 'playoff';
-                if (league.promotion.playoff[league.promotion.playoff.length -1] === position) {
+                if (
+                    league.promotion.playoff[
+                        league.promotion.playoff.length - 1
+                    ] === position
+                ) {
                     rowClass += ' __last';
                 }
             }
@@ -478,5 +497,5 @@ window.onload = function () {
     setTeamIndex();
     setTimeout(() => {
         setNextActionButtonText();
-    })
+    });
 };

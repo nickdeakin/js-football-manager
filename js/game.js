@@ -9,14 +9,16 @@ let seasonNumber = 1;
 let currentResultLeague = 0;
 let currentMatchDay = 0;
 
-let leagues = defaultLeagues.map(league => new League(league));
-leagues.forEach(league => {
-    league.teams = defaultTeams.filter(team => team.league === league.id).map(team => generateTeam(team, league.id));
+let leagues = defaultLeagues.map((league) => new League(league));
+leagues.forEach((league) => {
+    league.teams = defaultTeams
+        .filter((team) => team.league === league.id)
+        .map((team) => generateTeam(team, league.id));
     league.matchDays = league.generateMatchDays();
 });
 
 let allTeams = new Map();
-leagues.forEach(l => l.teams.forEach(t => allTeams.set(t.id,t)));
+leagues.forEach((l) => l.teams.forEach((t) => allTeams.set(t.id, t)));
 
 function nextAction() {
     if (leagues.every((league) => league.isSeasonOver())) {
@@ -93,11 +95,11 @@ function newSeason() {
         let relegationTarget = null;
 
         if (league.promotion !== null) {
-            promotionTarget = leagues.find(
-                (x) => x.id === league.promotion.id
-            );
+            promotionTarget = leagues.find((x) => x.id === league.promotion.id);
             if (league.promotion.automatic) {
-                promoted = league.promotion.automatic.map((x) => standings[x - 1]);
+                promoted = league.promotion.automatic.map(
+                    (x) => standings[x - 1]
+                );
             }
             if (league.promotion.playoff) {
                 playoff = league.promotion.playoff.map((x) => standings[x - 1]);
@@ -178,7 +180,7 @@ function newSeason() {
     currentMatchDay = 0;
 
     allTeams = new Map();
-    leagues.forEach(l => l.teams.forEach(t => allTeams.set(t.id,t)));
+    leagues.forEach((l) => l.teams.forEach((t) => allTeams.set(t.id, t)));
 
     let resultDiv = document.getElementById('match-result');
     resultDiv.innerHTML = `<h3>Season ${seasonNumber} Started!</h3>`;
@@ -249,7 +251,9 @@ function loadGame() {
                 Object.assign(new Player(), p)
             );
             allTeams = new Map();
-            leagues.forEach(l => l.teams.forEach(t => allTeams.set(t.id,t)));
+            leagues.forEach((l) =>
+                l.teams.forEach((t) => allTeams.set(t.id, t))
+            );
             setNextActionButtonText(); // Update UI
             document.getElementById('match-result').innerHTML =
                 `<h3>Loaded Season ${seasonNumber}</h3>`;
