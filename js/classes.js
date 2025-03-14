@@ -37,9 +37,7 @@ class Team {
     addPlayer(player) {
         this.players.push(player);
         this.wageBill += player.wage;
-        if (this.name === yourTeamName) {
-            this.updateStartingXI(player);
-        }
+        this.updateStartingXI(player);
     }
 
     removePlayer(index) {

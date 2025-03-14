@@ -494,6 +494,7 @@ generateTransferList();
 window.onload = function () {
     document.getElementById('match-result').innerHTML =
         `<h3>Welcome to Football Manager - Season ${seasonNumber}</h3>`;
+    setup();
     setTeamIndex();
     setTimeout(() => {
         setNextActionButtonText();

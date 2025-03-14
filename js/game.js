@@ -1,7 +1,6 @@
-let yourTeamName = 'Swindon Town';
+let yourTeamId = 'eng-swindon';
 
-let yourTeamLeagueIndex = 0;
-let yourTeamIndex = 0;
+let yourTeamLeagueId = 0;
 let currentHistoryDay = 0;
 let currentFutureDay = 0;
 let transferList = [];
@@ -9,19 +8,55 @@ let seasonNumber = 1;
 let currentResultLeague = 0;
 let currentMatchDay = 0;
 
-let leagues = defaultLeagues.map((league) => new League(league));
-leagues.forEach((league) => {
-    league.teams = defaultTeams
-        .filter((team) => team.league === league.id)
-        .map((team) => generateTeam(team, league.id));
-    league.matchDays = league.generateMatchDays();
-});
+let leagues = new Map();
 
 let allTeams = new Map();
-leagues.forEach((l) => l.teams.forEach((t) => allTeams.set(t.id, t)));
+
+const setup = () => {
+    generateTeams();
+    generateLeagues();
+    assignTeamsToLeagues();
+    generateMatchDays();
+};
+
+const generateTeams = () => {
+    defaultTeams
+        .forEach(x => {
+            allTeams.set(x.id, generateTeam(x, x.league));
+        });
+}
+
+const generateLeagues = () => {
+    defaultLeagues.forEach((league) => {
+        const x = new League(league);
+        leagues.set(x.id, x);
+    });
+}
+
+const assignTeamsToLeagues = () => {
+    for (const [leagueId, league] of leagues.entries()) {
+        for (const [teamId, team] of allTeams.entries()) {
+            if (team.league === leagueId) {
+                league.teams.push(team);
+            }
+        }
+    }
+}
+
+const generateMatchDays = () => {
+    for (const [leagueId, league] of leagues.entries()) {
+        league.matchDays = league.generateMatchDays();
+    }
+}
 
 function nextAction() {
-    if (leagues.every((league) => league.isSeasonOver())) {
+    // TODO: End of season is end of week 52... more or less
+    const leagueArray = [];
+    for (const [leagueId, league] of leagues.entries()) {
+        leagueArray.push(league);
+    }
+
+    if (leagueArray.every((league) => league.isSeasonOver())) {
         newSeason();
     } else {
         simulateMatchDay();
@@ -29,10 +64,12 @@ function nextAction() {
 }
 
 function simulateMatchDay() {
-    leagues.forEach((league) => league.simulateMatchDay());
+    for (const [leagueId, league] of leagues.entries()) {
+        league.simulateMatchDay();
+    }
     currentHistoryDay = currentHistoryDay++;
     currentMatchDay++;
-    currentResultLeague = yourTeamLeagueIndex;
+    currentResultLeague = yourTeamLeagueId;
     displayMatchDayResults();
     setNextActionButtonText();
 }
@@ -42,10 +79,10 @@ function displayMatchDayResults() {
     resultDiv.innerHTML = `<h3>Season ${seasonNumber} - Match Day ${currentMatchDay} Results:</h3>`;
     resultDiv.innerHTML += `
         <div class="league-tabs">
-            <button onclick="currentResultLeague=0;displayMatchDayResults()">Premier League</button>
-            <button onclick="currentResultLeague=1;displayMatchDayResults()">Championship</button>
-            <button onclick="currentResultLeague=2;displayMatchDayResults()">League One</button>
-            <button onclick="currentResultLeague=3;displayMatchDayResults()">League Two</button>
+            <button onclick="currentResultLeague='eng-prem';displayMatchDayResults()">Premier League</button>
+            <button onclick="currentResultLeague='eng-champ';displayMatchDayResults()">Championship</button>
+            <button onclick="currentResultLeague='eng-l1';displayMatchDayResults()">League One</button>
+            <button onclick="currentResultLeague='eng-l2';displayMatchDayResults()">League Two</button>
         </div>
     `;
     let tableHTML = `
@@ -60,8 +97,9 @@ function displayMatchDayResults() {
             </thead>
             <tbody>
     `;
-    let results = leagues[currentResultLeague].getTodayResults();
+    let results = leagues.get(currentResultLeague).getTodayResults();
     results.forEach((result) => {
+        const yourTeamName = allTeams.get(yourTeamId).name;
         let isYourTeam =
             result.homeTeam === yourTeamName ||
             result.awayTeam === yourTeamName;
@@ -79,8 +117,12 @@ function displayMatchDayResults() {
 }
 
 function setNextActionButtonText() {
+    const leagueArray = [];
+    for (const [leagueId, league] of leagues.entries()) {
+        leagueArray.push(league);
+    }
     const button = document.getElementById('next-action-button');
-    button.innerText = leagues.every((league) => league.isSeasonOver())
+    button.innerText = leagueArray.every((league) => league.isSeasonOver())
         ? 'Next Season'
         : 'Next Match Day';
 }
@@ -189,22 +231,16 @@ function newSeason() {
 }
 
 function setTeamIndex() {
-    yourTeamLeagueIndex = leagues.findIndex((league) =>
-        league.teams.some((team) => team.name === yourTeamName)
-    );
-    yourTeamIndex = leagues[yourTeamLeagueIndex].teams.findIndex(
-        (team) => team.name === yourTeamName
-    );
+    yourTeamLeagueId = allTeams.get(yourTeamId).league;
 }
 
 function saveGame() {
     const gameState = {
         leagues,
-        yourTeamName,
-        yourTeamLeagueIndex,
+        yourTeamLeagueId,
         seasonNumber,
         transferList,
-        yourTeamIndex,
+        yourTeamId,
         currentHistoryDay,
         currentFutureDay,
         currentResultLeague,
@@ -239,10 +275,9 @@ function loadGame() {
                         .forEach((p) => t.players.push(t));
                 });
             });
-            yourTeamName = save.yourTeamName;
-            yourTeamLeagueIndex = save.yourTeamLeagueIndex;
+            yourTeamLeagueId = save.yourTeamLeagueId;
             seasonNumber = save.seasonNumber;
-            yourTeamIndex = save.yourTeamIndex;
+            yourTeamId = save.yourTeamId;
             currentHistoryDay = save.currentHistoryDay;
             currentFutureDay = save.currentFutureDay;
             currentResultLeague = save.currentResultLeague;
