@@ -173,10 +173,10 @@ const generatePlayerId = () => {
 };
 
 const simulatePlayoff = (teams) => {
-    let semi1 = new Match().simulate({ home: teams[0], away: teams[3] });
-    let semi2 = new Match().simulate({ home: teams[1], away: teams[2] });
+    let semi1 = simulateMatch({ home: teams[0], away: teams[3] });
+    let semi2 = simulateMatch({ home: teams[1], away: teams[2] });
     let winner1 = semi1.homeScore > semi1.awayScore ? teams[0] : teams[3];
     let winner2 = semi2.homeScore > semi2.awayScore ? teams[1] : teams[2];
-    let final = new Match().simulate({ home: winner1, away: winner2 });
+    let final = simulateMatch({ home: winner1, away: winner2 });
     return final.homeScore > final.awayScore ? winner1 : winner2;
 };

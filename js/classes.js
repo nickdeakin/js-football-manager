@@ -94,56 +94,55 @@ class Team {
     };
 }
 
-class Match {
-    simulate = ({ home: home, away: away, league: league }) => {
-        let skill1 = home.getTeamSkill();
-        let skill2 = away.getTeamSkill();
-        let score1 = Math.floor(Math.random() * 5 * (skill1 / 100));
-        let score2 = Math.floor(Math.random() * 5 * (skill2 / 100));
 
-        home.played++;
-        away.played++;
-        if (score1 > score2) {
-            home.points += 3;
-            home.wins++;
-            away.losses++;
-            home.popularity = Math.min(home.popularity + 2, 100);
-            away.popularity = Math.max(away.popularity - 1, 0);
-        } else if (score2 > score1) {
-            away.points += 3;
-            away.wins++;
-            home.losses++;
-            away.popularity = Math.min(away.popularity + 2, 100);
-            home.popularity = Math.max(home.popularity - 1, 0);
-        } else {
-            home.points += 1;
-            away.points += 1;
-            home.draws++;
-            away.draws++;
-        }
+simulateMatch = ({ home: home, away: away, league: league }) => {
+    let skill1 = home.getTeamSkill();
+    let skill2 = away.getTeamSkill();
+    let score1 = Math.floor(Math.random() * 5 * (skill1 / 100));
+    let score2 = Math.floor(Math.random() * 5 * (skill2 / 100));
 
-        const ticketPrice = 20;
-        const attendance = Math.min(
-            Math.floor(
-                ((home.popularity + away.popularity) / 200) *
-                    home.stadium.capacity
-            ),
-            home.stadium.capacity
-        );
-        const totalIncome = (attendance * ticketPrice) / 1000000;
-        const splitIncome = totalIncome / 2;
-        home.budget += splitIncome;
-        away.budget += splitIncome;
+    home.played++;
+    away.played++;
+    if (score1 > score2) {
+        home.points += 3;
+        home.wins++;
+        away.losses++;
+        home.popularity = Math.min(home.popularity + 2, 100);
+        away.popularity = Math.max(away.popularity - 1, 0);
+    } else if (score2 > score1) {
+        away.points += 3;
+        away.wins++;
+        home.losses++;
+        away.popularity = Math.min(away.popularity + 2, 100);
+        home.popularity = Math.max(home.popularity - 1, 0);
+    } else {
+        home.points += 1;
+        away.points += 1;
+        home.draws++;
+        away.draws++;
+    }
 
-        return {
-            homeTeam: home.name,
-            awayTeam: away.name,
-            homeScore: score1,
-            awayScore: score2,
-            attendance: attendance,
-        };
+    const ticketPrice = 20;
+    const attendance = Math.min(
+        Math.floor(
+            ((home.popularity + away.popularity) / 200) *
+                home.stadium.capacity
+        ),
+        home.stadium.capacity
+    );
+    const totalIncome = (attendance * ticketPrice) / 1000000;
+    const splitIncome = totalIncome / 2;
+    home.budget += splitIncome;
+    away.budget += splitIncome;
+
+    return {
+        homeTeam: home.name,
+        awayTeam: away.name,
+        homeScore: score1,
+        awayScore: score2,
+        attendance: attendance,
     };
-}
+};
 
 class League {
     constructor({
@@ -229,9 +228,8 @@ class League {
         let results = [];
         let todayFixtures = this.matchDays[this.matchDay];
         todayFixtures.forEach((fixture) => {
-            let match = new Match();
             results.push(
-                match.simulate({
+                simulateMatch({
                     home: teams.get(fixture.home),
                     away: teams.get(fixture.away),
                     league: fixture.league,
