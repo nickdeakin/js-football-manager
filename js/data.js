@@ -32,7 +32,7 @@ const defaultLeagues = [
     },
     {
         id: 'eng-l1',
-        name: 'EFL League one',
+        name: 'EFL League One',
         country: 'England',
         tier: 3,
         size: 24,
@@ -49,7 +49,7 @@ const defaultLeagues = [
     },
     {
         id: 'eng-l2',
-        name: 'EFL League one',
+        name: 'EFL League Two',
         country: 'England',
         tier: 4,
         size: 24,
@@ -673,6 +673,8 @@ const lastNames = [
     'Scott',
     'Green',
 ];
+
+const positions = ['Goalkeeper', 'Defender', 'Midfielder', 'Forward'];
 
 const nationalities = [
     'England',

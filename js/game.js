@@ -9,8 +9,8 @@ let currentResultLeague = 0;
 let currentMatchDay = 0;
 
 let leagues = new Map();
-
-let allTeams = new Map();
+let teams = new Map();
+let players = new Map();
 
 const setup = () => {
     generateTeams();
@@ -20,34 +20,33 @@ const setup = () => {
 };
 
 const generateTeams = () => {
-    defaultTeams
-        .forEach(x => {
-            allTeams.set(x.id, generateTeam(x, x.league));
-        });
-}
+    defaultTeams.forEach((x) => {
+        teams.set(x.id, generateTeam(x, x.league));
+    });
+};
 
 const generateLeagues = () => {
     defaultLeagues.forEach((league) => {
         const x = new League(league);
         leagues.set(x.id, x);
     });
-}
+};
 
 const assignTeamsToLeagues = () => {
     for (const [leagueId, league] of leagues.entries()) {
-        for (const [teamId, team] of allTeams.entries()) {
+        for (const [teamId, team] of teams.entries()) {
             if (team.league === leagueId) {
                 league.teams.push(team);
             }
         }
     }
-}
+};
 
 const generateMatchDays = () => {
     for (const [leagueId, league] of leagues.entries()) {
         league.matchDays = league.generateMatchDays();
     }
-}
+};
 
 function nextAction() {
     // TODO: End of season is end of week 52... more or less
@@ -99,7 +98,7 @@ function displayMatchDayResults() {
     `;
     let results = leagues.get(currentResultLeague).getTodayResults();
     results.forEach((result) => {
-        const yourTeamName = allTeams.get(yourTeamId).name;
+        const yourTeamName = teams.get(yourTeamId).name;
         let isYourTeam =
             result.homeTeam === yourTeamName ||
             result.awayTeam === yourTeamName;
@@ -137,7 +136,7 @@ function newSeason() {
         let relegationTarget = null;
 
         if (league.promotion !== null) {
-            promotionTarget = leagues.find((x) => x.id === league.promotion.id);
+            promotionTarget = leagues.get(league.promotion.id);
             if (league.promotion.automatic) {
                 promoted = league.promotion.automatic.map(
                     (x) => standings[x - 1]
@@ -153,9 +152,7 @@ function newSeason() {
         }
 
         if (league.relegation !== null) {
-            relegationTarget = leagues.find(
-                (x) => x.id === league.relegation.id
-            );
+            relegationTarget = leagues.get(league.relegation.id);
             if (league.relegation.automatic) {
                 relegated = league.relegation.automatic.map(
                     (x) => standings[x - 1]
@@ -187,7 +184,10 @@ function newSeason() {
                 // Player retires
                 let retiredPlayer = team.removePlayer(retirees[i]);
                 // Youth player takes their place
-                let youth = generateYouthPlayer(retiredPlayer.position);
+                let youth = generateYouthPlayer(
+                    retiredPlayer.position,
+                    team.id
+                );
                 team.addPlayer(youth);
             }
         });
@@ -221,9 +221,6 @@ function newSeason() {
     seasonNumber++;
     currentMatchDay = 0;
 
-    allTeams = new Map();
-    leagues.forEach((l) => l.teams.forEach((t) => allTeams.set(t.id, t)));
-
     let resultDiv = document.getElementById('match-result');
     resultDiv.innerHTML = `<h3>Season ${seasonNumber} Started!</h3>`;
     hideAllPopups();
@@ -231,7 +228,7 @@ function newSeason() {
 }
 
 function setTeamIndex() {
-    yourTeamLeagueId = allTeams.get(yourTeamId).league;
+    yourTeamLeagueId = teams.get(yourTeamId).league;
 }
 
 function saveGame() {
@@ -285,10 +282,13 @@ function loadGame() {
             transferList = save.transferList.map((p) =>
                 Object.assign(new Player(), p)
             );
-            allTeams = new Map();
+
+            // TODO: Figure out loading leagues, teams, players, matches etc
+            /*
             leagues.forEach((l) =>
-                l.teams.forEach((t) => allTeams.set(t.id, t))
+                l.teams.forEach((t) => teams.set(t.id, t))
             );
+            */
             setNextActionButtonText(); // Update UI
             document.getElementById('match-result').innerHTML =
                 `<h3>Loaded Season ${seasonNumber}</h3>`;

@@ -1,5 +1,16 @@
 class Player {
-    constructor(name, position, skills, value, wage, age, nationality) {
+    constructor({
+        id,
+        name,
+        position,
+        skills,
+        value,
+        wage,
+        age,
+        nationality,
+        team,
+    }) {
+        this.id = id;
         this.name = name;
         this.position = position;
         this.skills = skills;
@@ -7,6 +18,7 @@ class Player {
         this.wage = wage;
         this.age = age;
         this.nationality = nationality;
+        this.team = team;
     }
 
     getAverageSkill() {
@@ -136,6 +148,7 @@ class Match {
 class League {
     constructor({
         id,
+        name,
         teams,
         tier,
         size,
@@ -146,6 +159,7 @@ class League {
         prizeMoney,
     }) {
         this.id = id;
+        this.name = name;
         this.teams = teams ?? [];
         this.tier = tier;
         this.size = size;
@@ -217,8 +231,8 @@ class League {
             let match = new Match();
             results.push(
                 match.simulate({
-                    home: allTeams.get(fixture.home),
-                    away: allTeams.get(fixture.away),
+                    home: teams.get(fixture.home),
+                    away: teams.get(fixture.away),
                     league: fixture.league,
                 })
             );
@@ -241,7 +255,8 @@ class League {
         let future = [];
         for (let i = this.matchDay; i < this.matchDays.length; i++) {
             let dayFixtures = this.matchDays[i].map(
-                (fixture) => `${fixture[0].name} vs ${fixture[1].name}`
+                (fixture) =>
+                    `${teams.get(fixture.home).name} vs ${teams.get(fixture.away).name}`
             );
             future.push({ matchDay: i + 1, fixtures: dayFixtures });
         }
