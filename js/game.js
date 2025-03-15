@@ -1,51 +1,88 @@
-let yourTeamName = 'Swindon Town';
+let yourTeamId = 'eng-swindon';
 
-let yourTeamLeagueIndex = 0;
-let yourTeamIndex = 0;
+let yourTeamLeagueId = 0;
 let currentHistoryDay = 0;
 let currentFutureDay = 0;
-let transferList = [];
 let seasonNumber = 1;
 let currentResultLeague = 0;
 let currentMatchDay = 0;
 
-let leagues = defaultLeagues.map((league) => new League(league));
-leagues.forEach((league) => {
-    league.teams = defaultTeams
-        .filter((team) => team.league === league.id)
-        .map((team) => generateTeam(team, league.id));
-    league.matchDays = league.generateMatchDays();
-});
+let leagues = new Map();
+let teams = new Map();
+let players = new Map();
+let transferList = new Map();
 
-let allTeams = new Map();
-leagues.forEach((l) => l.teams.forEach((t) => allTeams.set(t.id, t)));
+const setup = () => {
+    generateTeams();
+    generateLeagues();
+    assignTeamsToLeagues();
+    generateMatchDays();
+};
 
-function nextAction() {
-    if (leagues.every((league) => league.isSeasonOver())) {
+const generateTeams = () => {
+    defaultTeams.forEach((x) => {
+        teams.set(x.id, generateTeam(x, x.league));
+    });
+};
+
+const generateLeagues = () => {
+    defaultLeagues.forEach((league) => {
+        const x = new League(league);
+        leagues.set(x.id, x);
+    });
+};
+
+const assignTeamsToLeagues = () => {
+    leagues.forEach((league) => {
+        teams.forEach((team) => {
+            if (team.league === league.id) {
+                league.teams.push(team);
+            }
+        });
+    });
+};
+
+const generateMatchDays = () => {
+    leagues.forEach((league) => {
+        league.matchDays = league.generateMatchDays();
+    });
+};
+
+const nextAction = () => {
+    let leaguesStillPlaying = [];
+    leagues.forEach((league) => {
+        if (!league.isSeasonOver()) {
+            leaguesStillPlaying.push(league.id);
+        }
+    });
+
+    if (leaguesStillPlaying.length === 0) {
         newSeason();
     } else {
         simulateMatchDay();
     }
-}
+};
 
-function simulateMatchDay() {
-    leagues.forEach((league) => league.simulateMatchDay());
+const simulateMatchDay = () => {
+    leagues.forEach((league) => {
+        league.simulateMatchDay();
+    });
     currentHistoryDay = currentHistoryDay++;
     currentMatchDay++;
-    currentResultLeague = yourTeamLeagueIndex;
+    currentResultLeague = yourTeamLeagueId;
     displayMatchDayResults();
     setNextActionButtonText();
-}
+};
 
-function displayMatchDayResults() {
+const displayMatchDayResults = () => {
     let resultDiv = document.getElementById('match-result');
     resultDiv.innerHTML = `<h3>Season ${seasonNumber} - Match Day ${currentMatchDay} Results:</h3>`;
     resultDiv.innerHTML += `
         <div class="league-tabs">
-            <button onclick="currentResultLeague=0;displayMatchDayResults()">Premier League</button>
-            <button onclick="currentResultLeague=1;displayMatchDayResults()">Championship</button>
-            <button onclick="currentResultLeague=2;displayMatchDayResults()">League One</button>
-            <button onclick="currentResultLeague=3;displayMatchDayResults()">League Two</button>
+            <button onclick="currentResultLeague='eng-prem';displayMatchDayResults()">Premier League</button>
+            <button onclick="currentResultLeague='eng-champ';displayMatchDayResults()">Championship</button>
+            <button onclick="currentResultLeague='eng-l1';displayMatchDayResults()">League One</button>
+            <button onclick="currentResultLeague='eng-l2';displayMatchDayResults()">League Two</button>
         </div>
     `;
     let tableHTML = `
@@ -60,8 +97,9 @@ function displayMatchDayResults() {
             </thead>
             <tbody>
     `;
-    let results = leagues[currentResultLeague].getTodayResults();
+    let results = leagues.get(currentResultLeague).getTodayResults();
     results.forEach((result) => {
+        const yourTeamName = teams.get(yourTeamId).name;
         let isYourTeam =
             result.homeTeam === yourTeamName ||
             result.awayTeam === yourTeamName;
@@ -76,16 +114,20 @@ function displayMatchDayResults() {
     });
     tableHTML += `</tbody></table>`;
     resultDiv.innerHTML += tableHTML;
-}
+};
 
-function setNextActionButtonText() {
+const setNextActionButtonText = () => {
+    const leagueArray = [];
+    for (const [leagueId, league] of leagues.entries()) {
+        leagueArray.push(league);
+    }
     const button = document.getElementById('next-action-button');
-    button.innerText = leagues.every((league) => league.isSeasonOver())
+    button.innerText = leagueArray.every((league) => league.isSeasonOver())
         ? 'Next Season'
         : 'Next Match Day';
-}
+};
 
-function newSeason() {
+const newSeason = () => {
     leagues.forEach((league) => {
         let standings = league.getStandings();
         let promoted = [];
@@ -95,7 +137,7 @@ function newSeason() {
         let relegationTarget = null;
 
         if (league.promotion !== null) {
-            promotionTarget = leagues.find((x) => x.id === league.promotion.id);
+            promotionTarget = leagues.get(league.promotion.id);
             if (league.promotion.automatic) {
                 promoted = league.promotion.automatic.map(
                     (x) => standings[x - 1]
@@ -111,9 +153,7 @@ function newSeason() {
         }
 
         if (league.relegation !== null) {
-            relegationTarget = leagues.find(
-                (x) => x.id === league.relegation.id
-            );
+            relegationTarget = leagues.get(league.relegation.id);
             if (league.relegation.automatic) {
                 relegated = league.relegation.automatic.map(
                     (x) => standings[x - 1]
@@ -133,21 +173,22 @@ function newSeason() {
             team.losses = 0;
 
             // Handle age increase
-            let retirees = [];
-            team.players.forEach((player, index) => {
+            let retirees = new Map();
+            team.players.forEach((player) => {
                 player.age += 1;
                 player.value = calculateValue(player.skills, player.age);
-                if (player.age > 35) retirees.push(index);
+                if (player.age > 35) {
+                    retirees.set(player.id, player);
+                }
             });
 
             // Handle retirees
-            for (let i = retirees.length - 1; i >= 0; i--) {
-                // Player retires
-                let retiredPlayer = team.removePlayer(retirees[i]);
-                // Youth player takes their place
-                let youth = generateYouthPlayer(retiredPlayer.position);
+            retirees.forEach((player) => {
+                team.removePlayer(player);
+                player.team = 'retired';
+                let youth = generateYouthPlayer(player.position, team.id);
                 team.addPlayer(youth);
-            }
+            });
         });
 
         // Promotions
@@ -179,32 +220,23 @@ function newSeason() {
     seasonNumber++;
     currentMatchDay = 0;
 
-    allTeams = new Map();
-    leagues.forEach((l) => l.teams.forEach((t) => allTeams.set(t.id, t)));
-
     let resultDiv = document.getElementById('match-result');
     resultDiv.innerHTML = `<h3>Season ${seasonNumber} Started!</h3>`;
     hideAllPopups();
     setNextActionButtonText();
-}
+};
 
-function setTeamIndex() {
-    yourTeamLeagueIndex = leagues.findIndex((league) =>
-        league.teams.some((team) => team.name === yourTeamName)
-    );
-    yourTeamIndex = leagues[yourTeamLeagueIndex].teams.findIndex(
-        (team) => team.name === yourTeamName
-    );
-}
+const setTeamIndex = () => {
+    yourTeamLeagueId = teams.get(yourTeamId).league;
+};
 
-function saveGame() {
+const saveGame = () => {
     const gameState = {
         leagues,
-        yourTeamName,
-        yourTeamLeagueIndex,
+        yourTeamLeagueId,
         seasonNumber,
         transferList,
-        yourTeamIndex,
+        yourTeamId,
         currentHistoryDay,
         currentFutureDay,
         currentResultLeague,
@@ -221,9 +253,9 @@ function saveGame() {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url); // Clean up
-}
+};
 
-function loadGame() {
+const loadGame = () => {
     const file = event.target.files[0];
     if (!file) return;
     const reader = new FileReader();
@@ -239,10 +271,9 @@ function loadGame() {
                         .forEach((p) => t.players.push(t));
                 });
             });
-            yourTeamName = save.yourTeamName;
-            yourTeamLeagueIndex = save.yourTeamLeagueIndex;
+            yourTeamLeagueId = save.yourTeamLeagueId;
             seasonNumber = save.seasonNumber;
-            yourTeamIndex = save.yourTeamIndex;
+            yourTeamId = save.yourTeamId;
             currentHistoryDay = save.currentHistoryDay;
             currentFutureDay = save.currentFutureDay;
             currentResultLeague = save.currentResultLeague;
@@ -250,10 +281,13 @@ function loadGame() {
             transferList = save.transferList.map((p) =>
                 Object.assign(new Player(), p)
             );
-            allTeams = new Map();
+
+            // TODO: Figure out loading leagues, teams, players, matches etc
+            /*
             leagues.forEach((l) =>
-                l.teams.forEach((t) => allTeams.set(t.id, t))
+                l.teams.forEach((t) => teams.set(t.id, t))
             );
+            */
             setNextActionButtonText(); // Update UI
             document.getElementById('match-result').innerHTML =
                 `<h3>Loaded Season ${seasonNumber}</h3>`;
@@ -262,7 +296,7 @@ function loadGame() {
         }
     };
     reader.readAsText(file);
-}
+};
 
 // TODO: Disabled for now
 // window.onload = function () { loadGame(); /* existing code */ };

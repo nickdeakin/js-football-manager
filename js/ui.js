@@ -2,20 +2,20 @@
 let uiCurrentHistoryDay = 0;
 let uiCurrentFutureDay = 0;
 
-function showMyTeamPopup() {
-    showTeamPopup(yourTeamLeagueIndex, yourTeamIndex);
-}
+const showMyTeamPopup = () => {
+    showTeamPopup(yourTeamId);
+};
 
-function showTeamPopup(leagueIndex, teamIndex) {
-    let league = leagues[leagueIndex];
-    let team = league.teams[teamIndex];
+const showTeamPopup = (teamId) => {
+    let team = teams.get(teamId);
+    let league = leagues.get(team.league);
     let popup = document.getElementById('team-popup');
     let overlay = document.getElementById('popup-overlay');
     let avgRating = team.getTeamSkill().toFixed(1);
 
     let html = `
         <div class="popup-header">
-            <h3>${team.name} (${['Premier League', 'Championship', 'League One', 'League Two'][team.leagueTier]})</h3>
+            <h3>${team.name} (${league.name})</h3>
             <span class="close-btn" onclick="hideTeamPopup()">X</span>
         </div>
         <p><strong>Formation:</strong> ${team.formation}</p>
@@ -43,7 +43,7 @@ function showTeamPopup(leagueIndex, teamIndex) {
     team.players.slice(0, 11).forEach((player, index) => {
         html += `
             <tr>
-                <td><span class="player-link" onclick="showPlayerPopup('team', ${leagueIndex}, ${teamIndex}, ${index})">${player.name}</span></td>
+                <td><span class="player-link" onclick="showPlayerPopup('${player.id}')">${player.name}</span></td>
                 <td>${player.position}</td>
                 <td>${player.getAverageSkill().toFixed(1)}</td>
                 <td>${player.age}</td>
@@ -61,7 +61,7 @@ function showTeamPopup(leagueIndex, teamIndex) {
     team.players.slice(11, 16).forEach((player, index) => {
         html += `
             <tr>
-                <td><span class="player-link" onclick="showPlayerPopup('team', ${leagueIndex}, ${teamIndex}, ${index + 11})">${player.name}</span></td>
+                <td><span class="player-link" onclick="showPlayerPopup('${player.id}')">${player.name}</span></td>
                 <td>${player.position}</td>
                 <td>${player.getAverageSkill().toFixed(1)}</td>
                 <td>${player.age}</td>
@@ -79,7 +79,7 @@ function showTeamPopup(leagueIndex, teamIndex) {
     team.players.slice(16).forEach((player, index) => {
         html += `
             <tr>
-                <td><span class="player-link" onclick="showPlayerPopup('team', ${leagueIndex}, ${teamIndex}, ${index + 16})">${player.name}</span></td>
+                <td><span class="player-link" onclick="showPlayerPopup('${player.id}')">${player.name}</span></td>
                 <td>${player.position}</td>
                 <td>${player.getAverageSkill().toFixed(1)}</td>
                 <td>${player.age}</td>
@@ -93,26 +93,24 @@ function showTeamPopup(leagueIndex, teamIndex) {
     popup.innerHTML = html;
     popup.style.display = 'block';
     overlay.style.display = 'block';
-}
+};
 
-function hideTeamPopup() {
+const hideTeamPopup = () => {
     document.getElementById('team-popup').style.display = 'none';
     document.getElementById('popup-overlay').style.display = 'none';
-}
+};
 
-function showTransferPopup() {
+const showTransferPopup = () => {
     let popup = document.getElementById('transfer-popup');
     let overlay = document.getElementById('popup-overlay');
-    let yourTeam = leagues[yourTeamLeagueIndex].teams.find(
-        (t) => t.name === yourTeamName
-    );
+    let yourTeam = teams.get(yourTeamId);
     let html = `
         <div class="popup-header">
             <h3>Transfer Market (Your Budget: £${yourTeam.budget.toFixed(1)}M)</h3>
             <span class="close-btn" onclick="hideTransferPopup()">X</span>
         </div>
     `;
-    if (transferList.length === 0) {
+    if (transferList.size === 0) {
         html += '<p>No players available for transfer.</p>';
     } else {
         html += `
@@ -129,10 +127,10 @@ function showTransferPopup() {
                 </thead>
                 <tbody>
         `;
-        transferList.forEach((player, index) => {
+        transferList.forEach((player) => {
             html += `
                 <tr>
-                    <td><span class="player-link" onclick="showPlayerPopup('transfer', -1, ${index})">${player.name}</span></td>
+                    <td><span class="player-link" onclick="showPlayerPopup('${player.id}')">${player.name}</span></td>
                     <td>${player.position}</td>
                     <td>${player.getAverageSkill().toFixed(1)}</td>
                     <td>${player.age}</td>
@@ -146,26 +144,18 @@ function showTransferPopup() {
     popup.innerHTML = html;
     popup.style.display = 'block';
     overlay.style.display = 'block';
-}
+};
 
-function hideTransferPopup() {
+const hideTransferPopup = () => {
     document.getElementById('transfer-popup').style.display = 'none';
     document.getElementById('popup-overlay').style.display = 'none';
-}
+};
 
-function showPlayerPopup(source, leagueIndex, index1, index2 = null) {
-    let player, teamIndex, playerIndex, isYourTeam;
-    if (source === 'team') {
-        teamIndex = index1;
-        playerIndex = index2;
-        player = leagues[leagueIndex].teams[teamIndex].players[playerIndex];
-        isYourTeam =
-            leagueIndex === yourTeamLeagueIndex && teamIndex === yourTeamIndex;
-    } else if (source === 'transfer') {
-        playerIndex = index1;
-        player = transferList[playerIndex];
-        isYourTeam = false;
-    }
+const showPlayerPopup = (playerId) => {
+    const player = players.get(playerId);
+    const isYourTeam = player.team === yourTeamId;
+    const team = teams.get(player.team);
+
     let popup = document.getElementById('player-popup');
     let overlay = document.getElementById('popup-overlay');
     let html = `
@@ -176,6 +166,7 @@ function showPlayerPopup(source, leagueIndex, index1, index2 = null) {
         <table>
             <tr><th>Attribute</th><th>Value</th></tr>
             <tr><td>Age</td><td>${player.age}</td></tr>
+            <tr><td>Team</td><td>${team ? team.name : 'None'}</td></tr>
             <tr><td>Nationality</td><td>${player.nationality}</td></tr>
             <tr><td>Position</td><td>${player.position}</td></tr>
             <tr><td>Value</td><td>£${player.value}M</td></tr>
@@ -192,58 +183,61 @@ function showPlayerPopup(source, leagueIndex, index1, index2 = null) {
         </table>
     `;
     if (isYourTeam) {
-        html += `<button onclick="sellPlayerFromPopup(${teamIndex}, ${playerIndex});hidePlayerPopup()">Sell Player</button>`;
-    } else if (source === 'transfer') {
-        html += `<button onclick="buyPlayerFromPopup(${playerIndex});hidePlayerPopup()">Buy Player</button>`;
+        html += `<button onclick="sellPlayerFromPopup('${playerId}');hidePlayerPopup()">Sell Player</button>`;
+    } else if (!team) {
+        html += `<button onclick="buyPlayerFromPopup('${playerId}');hidePlayerPopup()">Buy Player</button>`;
     }
     popup.innerHTML = html;
     popup.style.display = 'block';
     overlay.style.display = 'block';
-}
+};
 
-function hidePlayerPopup() {
+const hidePlayerPopup = () => {
     document.getElementById('player-popup').style.display = 'none';
     document.getElementById('popup-overlay').style.display = 'none';
-}
+};
 
-function sellPlayerFromPopup(teamIndex, playerIndex) {
-    let team = leagues[yourTeamLeagueIndex].teams[teamIndex];
-    let player = team.removePlayer(playerIndex);
+const sellPlayerFromPopup = (playerId) => {
+    const player = players.get(playerId);
+    let team = teams.get(player.team);
+    team.removePlayer(player);
     team.budget += parseFloat(player.value);
-    showTeamPopup(teamIndex);
-}
+    player.team = null;
+    showTeamPopup(team.id);
+};
 
-function buyPlayerFromPopup(transferIndex) {
-    let player = transferList[transferIndex];
-    let yourTeam = leagues[yourTeamLeagueIndex].teams[0];
+const buyPlayerFromPopup = (playerId) => {
+    let player = players.get(playerId);
+    let yourTeam = teams.get(yourTeamId);
     if (yourTeam.budget >= player.value && yourTeam.players.length < 25) {
         yourTeam.addPlayer(player);
         yourTeam.budget -= parseFloat(player.value);
-        transferList.splice(transferIndex, 1);
+        transferList.delete(player.id);
         showTransferPopup();
     } else {
         alert('Not enough budget or squad space (max 25 players)!');
     }
-}
+};
 
-function showResultsPopup(leagueIndex = yourTeamLeagueIndex) {
+const showResultsPopup = (leagueId = yourTeamLeagueId) => {
     let popup = document.getElementById('results-popup');
     let overlay = document.getElementById('popup-overlay');
-    let league = leagues[leagueIndex];
+    let league = leagues.get(leagueId);
+    const yourTeam = teams.get(yourTeamId);
     uiCurrentHistoryDay = Math.min(
         uiCurrentHistoryDay,
         league.history.length - 1
     );
     popup.innerHTML = `
         <div class="popup-header">
-            <h3>Results - ${['Premier League', 'Championship', 'League One', 'League Two'][league.tier]}</h3>
+            <h3>Results - ${league.name}</h3>
             <span class="close-btn" onclick="hideResultsPopup()">X</span>
         </div>
         <div class="league-tabs">
-            <button onclick="showResultsPopup(0)">Premier League</button>
-            <button onclick="showResultsPopup(1)">Championship</button>
-            <button onclick="showResultsPopup(2)">League One</button>
-            <button onclick="showResultsPopup(3)">League Two</button>
+            <button onclick="showResultsPopup('eng-prem')">Premier League</button>
+            <button onclick="showResultsPopup('eng-champ')">Championship</button>
+            <button onclick="showResultsPopup('eng-l1')">League One</button>
+            <button onclick="showResultsPopup('eng-l2')">League Two</button>
         </div>
     `;
     let controlsHTML = '';
@@ -252,7 +246,7 @@ function showResultsPopup(leagueIndex = yourTeamLeagueIndex) {
         contentHTML = '<p>No matches played yet.</p>';
     } else {
         for (let i = 0; i < league.history.length; i++) {
-            controlsHTML += `<button onclick="currentHistoryDay=${i};showResultsPopup(${leagueIndex})">Day ${i + 1}</button>`;
+            controlsHTML += `<button onclick="currentHistoryDay=${i};showResultsPopup('${league.id}')">Day ${i + 1}</button>`;
         }
         let day = league.history[currentHistoryDay];
         contentHTML = `
@@ -270,8 +264,8 @@ function showResultsPopup(leagueIndex = yourTeamLeagueIndex) {
         `;
         day.results.forEach((result) => {
             let isYourTeam =
-                result.homeTeam === yourTeamName ||
-                result.awayTeam === yourTeamName;
+                result.homeTeam === yourTeam.name ||
+                result.awayTeam === yourTeam.name;
             contentHTML += `
                 <tr ${isYourTeam ? 'class="your-team-result"' : ''}>
                     <td>${result.homeTeam}</td>
@@ -286,32 +280,33 @@ function showResultsPopup(leagueIndex = yourTeamLeagueIndex) {
     popup.innerHTML += `<div>${controlsHTML}</div><div>${contentHTML}</div>`;
     popup.style.display = 'block';
     overlay.style.display = 'block';
-}
+};
 
-function hideResultsPopup() {
+const hideResultsPopup = () => {
     document.getElementById('results-popup').style.display = 'none';
     document.getElementById('popup-overlay').style.display = 'none';
-}
+};
 
-function showFixturesPopup(leagueIndex = yourTeamLeagueIndex) {
+const showFixturesPopup = (leagueId = yourTeamLeagueId) => {
     let popup = document.getElementById('fixtures-popup');
     let overlay = document.getElementById('popup-overlay');
-    let league = leagues[leagueIndex];
+    let league = leagues.get(leagueId);
     let futureFixtures = league.getFutureFixtures();
+    let yourTeam = teams.get(yourTeamId);
     uiCurrentFutureDay = Math.min(
         uiCurrentFutureDay,
         futureFixtures.length - 1
     );
     popup.innerHTML = `
         <div class="popup-header">
-            <h3>Fixtures - ${['Premier League', 'Championship', 'League One', 'League Two'][league.tier]}</h3>
+            <h3>Fixtures - ${league.name}</h3>
             <span class="close-btn" onclick="hideFixturesPopup()">X</span>
         </div>
         <div class="league-tabs">
-            <button onclick="showFixturesPopup(0)">Premier League</button>
-            <button onclick="showFixturesPopup(1)">Championship</button>
-            <button onclick="showFixturesPopup(2)">League One</button>
-            <button onclick="showFixturesPopup(3)">League Two</button>
+            <button onclick="showFixturesPopup('eng-prem')">Premier League</button>
+            <button onclick="showFixturesPopup('eng-champ')">Championship</button>
+            <button onclick="showFixturesPopup('eng-l1')">League One</button>
+            <button onclick="showFixturesPopup('eng-l2')">League Two</button>
         </div>
     `;
     let controlsHTML = '';
@@ -324,7 +319,7 @@ function showFixturesPopup(leagueIndex = yourTeamLeagueIndex) {
             futureFixtures.length - 1
         );
         for (let i = 0; i < futureFixtures.length; i++) {
-            controlsHTML += `<button onclick="currentFutureDay=${i};showFixturesPopup(${leagueIndex})">Day ${futureFixtures[i].matchDay}</button>`;
+            controlsHTML += `<button onclick="currentFutureDay=${i};showFixturesPopup('${league.id}')">Day ${futureFixtures[i].matchDay}</button>`;
         }
         let day = futureFixtures[currentFutureDay];
         contentHTML = `
@@ -341,7 +336,7 @@ function showFixturesPopup(leagueIndex = yourTeamLeagueIndex) {
         `;
         day.fixtures.forEach((fixture) => {
             const [home, away] = fixture.split(' vs ');
-            let isYourTeam = home === yourTeamName || away === yourTeamName;
+            let isYourTeam = home === yourTeam.name || away === yourTeam.name;
             contentHTML += `
                 <tr ${isYourTeam ? 'class="your-team-result"' : ''}>
                     <td>${home}</td>
@@ -355,28 +350,28 @@ function showFixturesPopup(leagueIndex = yourTeamLeagueIndex) {
     popup.innerHTML += `<div>${controlsHTML}</div><div>${contentHTML}</div>`;
     popup.style.display = 'block';
     overlay.style.display = 'block';
-}
+};
 
-function hideFixturesPopup() {
+const hideFixturesPopup = () => {
     document.getElementById('fixtures-popup').style.display = 'none';
     document.getElementById('popup-overlay').style.display = 'none';
-}
+};
 
-function showTablePopup(leagueIndex = yourTeamLeagueIndex) {
+const showTablePopup = (leagueId = yourTeamLeagueId) => {
     let popup = document.getElementById('table-popup');
     let overlay = document.getElementById('popup-overlay');
-    let league = leagues[leagueIndex];
+    let league = leagues.get(leagueId);
     let standings = league.getStandings();
     popup.innerHTML = `
         <div class="popup-header">
-            <h3>${['Premier League', 'Championship', 'League One', 'League Two'][league.tier]} Table</h3>
+            <h3>${league.name} Table</h3>
             <span class="close-btn" onclick="hideTablePopup()">X</span>
         </div>
         <div class="league-tabs">
-            <button onclick="showTablePopup(0)">Premier League</button>
-            <button onclick="showTablePopup(1)">Championship</button>
-            <button onclick="showTablePopup(2)">League One</button>
-            <button onclick="showTablePopup(3)">League Two</button>
+            <button onclick="showTablePopup('eng-prem')">Premier League</button>
+            <button onclick="showTablePopup('eng-champ')">Championship</button>
+            <button onclick="showTablePopup('eng-l1')">League One</button>
+            <button onclick="showTablePopup('eng-l2')">League Two</button>
         </div>
     `;
     let tableHTML = `
@@ -457,10 +452,10 @@ function showTablePopup(leagueIndex = yourTeamLeagueIndex) {
                 }
             }
         }
-        if (team.name === yourTeamName) rowClass = 'your-team';
+        if (team.id === yourTeamId) rowClass = 'your-team';
         tableHTML += `
             <tr class="${rowClass}">
-                <td class="team-column"><span class="team-link" onclick="showTeamPopup(${leagueIndex}, ${index});hideTablePopup()">${team.name}</span></td>
+                <td class="team-column"><span class="team-link" onclick="showTeamPopup('${team.id}');hideTablePopup()">${team.name}</span></td>
                 <td>${team.played}</td>
                 <td>${team.wins}</td>
                 <td>${team.draws}</td>
@@ -473,27 +468,28 @@ function showTablePopup(leagueIndex = yourTeamLeagueIndex) {
     popup.innerHTML += tableHTML;
     popup.style.display = 'block';
     overlay.style.display = 'block';
-}
+};
 
-function hideTablePopup() {
+const hideTablePopup = () => {
     document.getElementById('table-popup').style.display = 'none';
     document.getElementById('popup-overlay').style.display = 'none';
-}
+};
 
-function hideAllPopups() {
+const hideAllPopups = () => {
     hideTeamPopup();
     hideTransferPopup();
     hideResultsPopup();
     hideFixturesPopup();
     hideTablePopup();
     hidePlayerPopup();
-}
+};
 
 // Initial setup
 generateTransferList();
 window.onload = function () {
     document.getElementById('match-result').innerHTML =
         `<h3>Welcome to Football Manager - Season ${seasonNumber}</h3>`;
+    setup();
     setTeamIndex();
     setTimeout(() => {
         setNextActionButtonText();

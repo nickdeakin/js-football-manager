@@ -1,4 +1,4 @@
-function calculateValue(skills, age) {
+const calculateValue = (skills, age) => {
     let avgSkill = Object.values(skills).reduce((sum, val) => sum + val, 0) / 6;
     let baseValue = (avgSkill - 40) * 0.5;
     let ageMultiplier =
@@ -8,14 +8,14 @@ function calculateValue(skills, age) {
               ? 1.0
               : 1.0 - (age - 30) * 0.0714;
     return Math.max(baseValue * ageMultiplier, 0).toFixed(1);
-}
+};
 
-function calculateWage(skills) {
+const calculateWage = (skills) => {
     let avgSkill = Object.values(skills).reduce((sum, val) => sum + val, 0) / 6;
     return Math.floor((avgSkill - 40) * 2);
-}
+};
 
-function generateSkills(min, max) {
+const generateSkills = (min, max) => {
     return {
         passing: Math.floor(Math.random() * (max - min + 1)) + min,
         tackling: Math.floor(Math.random() * (max - min + 1)) + min,
@@ -24,9 +24,9 @@ function generateSkills(min, max) {
         stamina: Math.floor(Math.random() * (max - min + 1)) + min,
         shooting: Math.floor(Math.random() * (max - min + 1)) + min,
     };
-}
+};
 
-function generateTeam(teamObject, league) {
+const generateTeam = (teamObject, league) => {
     const formation = formations[Math.floor(Math.random() * formations.length)];
 
     // TODO: Not happy about this
@@ -54,211 +54,129 @@ function generateTeam(teamObject, league) {
         popularity: popularity,
         budget,
     });
-    const skills = skillRanges.find((x) => x.league === league);
+    const skillsRange = skillRanges.find((x) => x.league === league);
 
     team.addPlayer(
-        new Player(
-            `${firstNames[Math.floor(Math.random() * firstNames.length)]} ${lastNames[Math.floor(Math.random() * lastNames.length)]}`,
-            'Goalkeeper',
-            generateSkills(skills.xi[0], skills.xi[1]),
-            0,
-            0,
-            Math.floor(Math.random() * 18) + 18,
-            nationalities[Math.floor(Math.random() * nationalities.length)]
-        )
+        generatePlayer({ position: 'Goalkeeper', skillsRange, team: team.id })
     );
-    team.players[0].value = calculateValue(
-        team.players[0].skills,
-        team.players[0].age
-    );
-    team.players[0].wage = calculateWage(team.players[0].skills);
 
     for (let i = 0; i < formation.def; i++) {
-        let playerSkills = generateSkills(skills.xi[0], skills.xi[1]);
-        let age = Math.floor(Math.random() * 18) + 18;
         team.addPlayer(
-            new Player(
-                `${firstNames[Math.floor(Math.random() * firstNames.length)]} ${lastNames[Math.floor(Math.random() * lastNames.length)]}`,
-                'Defender',
-                playerSkills,
-                calculateValue(playerSkills, age),
-                calculateWage(playerSkills),
-                age,
-                nationalities[Math.floor(Math.random() * nationalities.length)]
-            )
+            generatePlayer({ position: 'Defender', skillsRange, team: team.id })
         );
     }
 
     for (let i = 0; i < formation.mid; i++) {
-        let playerSkills = generateSkills(skills.xi[0], skills.xi[1]);
-        let age = Math.floor(Math.random() * 18) + 18;
         team.addPlayer(
-            new Player(
-                `${firstNames[Math.floor(Math.random() * firstNames.length)]} ${lastNames[Math.floor(Math.random() * lastNames.length)]}`,
-                'Midfielder',
-                playerSkills,
-                calculateValue(playerSkills, age),
-                calculateWage(playerSkills),
-                age,
-                nationalities[Math.floor(Math.random() * nationalities.length)]
-            )
+            generatePlayer({
+                position: 'Midfielder',
+                skillsRange,
+                team: team.id,
+            })
         );
     }
 
     for (let i = 0; i < formation.fwd; i++) {
-        let playerSkills = generateSkills(skills.xi[0], skills.xi[1]);
-        let age = Math.floor(Math.random() * 18) + 18;
         team.addPlayer(
-            new Player(
-                `${firstNames[Math.floor(Math.random() * firstNames.length)]} ${lastNames[Math.floor(Math.random() * lastNames.length)]}`,
-                'Forward',
-                playerSkills,
-                calculateValue(playerSkills, age),
-                calculateWage(playerSkills),
-                age,
-                nationalities[Math.floor(Math.random() * nationalities.length)]
-            )
+            generatePlayer({ position: 'Forward', skillsRange, team: team.id })
         );
     }
 
     team.addPlayer(
-        new Player(
-            `${firstNames[Math.floor(Math.random() * firstNames.length)]} ${lastNames[Math.floor(Math.random() * lastNames.length)]}`,
-            'Goalkeeper',
-            generateSkills(skills.sub[0], skills.sub[1]),
-            0,
-            0,
-            Math.floor(Math.random() * 18) + 18,
-            nationalities[Math.floor(Math.random() * nationalities.length)]
-        )
-    );
-    team.players[team.players.length - 1].value = calculateValue(
-        team.players[team.players.length - 1].skills,
-        team.players[team.players.length - 1].age
-    );
-    team.players[team.players.length - 1].wage = calculateWage(
-        team.players[team.players.length - 1].skills
+        generatePlayer({ position: 'Goalkeeper', skillsRange, team: team.id })
     );
 
     for (let i = 0; i < 2; i++) {
-        let playerSkills = generateSkills(skills.sub[0], skills.sub[1]);
-        let age = Math.floor(Math.random() * 18) + 18;
         team.addPlayer(
-            new Player(
-                `${firstNames[Math.floor(Math.random() * firstNames.length)]} ${lastNames[Math.floor(Math.random() * lastNames.length)]}`,
-                'Defender',
-                playerSkills,
-                calculateValue(playerSkills, age),
-                calculateWage(playerSkills),
-                age,
-                nationalities[Math.floor(Math.random() * nationalities.length)]
-            )
+            generatePlayer({ position: 'Defender', skillsRange, team: team.id })
         );
     }
 
     team.addPlayer(
-        new Player(
-            `${firstNames[Math.floor(Math.random() * firstNames.length)]} ${lastNames[Math.floor(Math.random() * lastNames.length)]}`,
-            'Midfielder',
-            generateSkills(skills.sub[0], skills.sub[1]),
-            0,
-            0,
-            Math.floor(Math.random() * 18) + 18,
-            nationalities[Math.floor(Math.random() * nationalities.length)]
-        )
-    );
-    team.players[team.players.length - 1].value = calculateValue(
-        team.players[team.players.length - 1].skills,
-        team.players[team.players.length - 1].age
-    );
-    team.players[team.players.length - 1].wage = calculateWage(
-        team.players[team.players.length - 1].skills
+        generatePlayer({ position: 'Midfielder', skillsRange, team: team.id })
     );
 
     team.addPlayer(
-        new Player(
-            `${firstNames[Math.floor(Math.random() * firstNames.length)]} ${lastNames[Math.floor(Math.random() * lastNames.length)]}`,
-            'Forward',
-            generateSkills(skills.sub[0], skills.sub[1]),
-            0,
-            0,
-            Math.floor(Math.random() * 18) + 18,
-            nationalities[Math.floor(Math.random() * nationalities.length)]
-        )
-    );
-    team.players[team.players.length - 1].value = calculateValue(
-        team.players[team.players.length - 1].skills,
-        team.players[team.players.length - 1].age
-    );
-    team.players[team.players.length - 1].wage = calculateWage(
-        team.players[team.players.length - 1].skills
+        generatePlayer({ position: 'Forward', skillsRange, team: team.id })
     );
 
     for (let i = 0; i < 3; i++) {
-        let randomPosition = [
-            'Goalkeeper',
-            'Defender',
-            'Midfielder',
-            'Forward',
-        ][Math.floor(Math.random() * 4)];
-        let playerSkills = generateSkills(skills.res[0], skills.res[1]);
-        let age = Math.floor(Math.random() * 18) + 18;
-        team.addPlayer(
-            new Player(
-                `${firstNames[Math.floor(Math.random() * firstNames.length)]} ${lastNames[Math.floor(Math.random() * lastNames.length)]}`,
-                randomPosition,
-                playerSkills,
-                calculateValue(playerSkills, age),
-                calculateWage(playerSkills),
-                age,
-                nationalities[Math.floor(Math.random() * nationalities.length)]
-            )
-        );
+        team.addPlayer(generatePlayer({ skillsRange, team: team.id }));
     }
 
     return team;
-}
+};
 
-function generateTransferList() {
-    transferList = [];
-    const positions = ['Goalkeeper', 'Defender', 'Midfielder', 'Forward'];
+const generateTransferList = () => {
+    transferList.clear();
     for (let i = 0; i < 10; i++) {
         let skills = generateSkills(40, 100);
-        let position = positions[Math.floor(Math.random() * positions.length)];
-        let age = Math.floor(Math.random() * 18) + 18;
-        transferList.push(
-            new Player(
-                `${firstNames[Math.floor(Math.random() * firstNames.length)]} ${lastNames[Math.floor(Math.random() * lastNames.length)]}`,
-                position,
-                skills,
-                calculateValue(skills, age),
-                calculateWage(skills),
-                age,
-                nationalities[Math.floor(Math.random() * nationalities.length)]
-            )
-        );
+        const player = generatePlayer({ skills });
+        transferList.set(player.id, player);
     }
-}
+};
 
-function generateYouthPlayer(position) {
+const generateYouthPlayer = (position, teamId) => {
     let skills = generateSkills(50, 80);
     let age = 18;
-    return new Player(
-        `${firstNames[Math.floor(Math.random() * firstNames.length)]} ${lastNames[Math.floor(Math.random() * lastNames.length)]}`,
-        position,
-        skills,
-        calculateValue(skills, age),
-        calculateWage(skills),
-        age,
-        nationalities[Math.floor(Math.random() * nationalities.length)]
-    );
-}
+    return generatePlayer({ skills, position, name, age, team: teamId });
+};
 
-function simulatePlayoff(teams) {
+const generatePlayer = ({
+    id,
+    skills,
+    skillsRange,
+    position,
+    name,
+    age,
+    nationality,
+    team,
+}) => {
+    const _age = age ?? Math.floor(Math.random() * 18) + 18;
+    let _skills =
+        skills ?? generateSkills(skillsRange.sub[0], skillsRange.sub[1]);
+    let _value = calculateValue(_skills, _age);
+    let _wage = calculateWage(_skills);
+    const player = new Player({
+        id: id ?? generatePlayerId(),
+        name:
+            name ??
+            `${firstNames[Math.floor(Math.random() * firstNames.length)]} ${lastNames[Math.floor(Math.random() * lastNames.length)]}`,
+        position:
+            position ?? positions[Math.floor(Math.random() * positions.length)],
+        skills: _skills,
+        value: _value,
+        wage: _wage,
+        age: _age,
+        nationality:
+            nationality ??
+            nationalities[Math.floor(Math.random() * nationalities.length)],
+        team,
+    });
+
+    players.set(player.id, player);
+
+    return player;
+};
+
+const generatePlayerId = () => {
+    let id;
+    let circuitBreaker = 0;
+    const limit = 10000;
+    do {
+        const randomId = Math.floor(Math.random() * 16777216);
+        id = randomId.toString(16).padStart(6, '0');
+        circuitBreaker++;
+    } while (players.has(id) || circuitBreaker > limit);
+
+    return id;
+};
+
+const simulatePlayoff = (teams) => {
     let semi1 = new Match().simulate({ home: teams[0], away: teams[3] });
     let semi2 = new Match().simulate({ home: teams[1], away: teams[2] });
     let winner1 = semi1.homeScore > semi1.awayScore ? teams[0] : teams[3];
     let winner2 = semi2.homeScore > semi2.awayScore ? teams[1] : teams[2];
     let final = new Match().simulate({ home: winner1, away: winner2 });
     return final.homeScore > final.awayScore ? winner1 : winner2;
-}
+};
