@@ -1,4 +1,4 @@
-function calculateValue(skills, age) {
+const calculateValue = (skills, age) => {
     let avgSkill = Object.values(skills).reduce((sum, val) => sum + val, 0) / 6;
     let baseValue = (avgSkill - 40) * 0.5;
     let ageMultiplier =
@@ -8,14 +8,14 @@ function calculateValue(skills, age) {
               ? 1.0
               : 1.0 - (age - 30) * 0.0714;
     return Math.max(baseValue * ageMultiplier, 0).toFixed(1);
-}
+};
 
-function calculateWage(skills) {
+const calculateWage = (skills) => {
     let avgSkill = Object.values(skills).reduce((sum, val) => sum + val, 0) / 6;
     return Math.floor((avgSkill - 40) * 2);
-}
+};
 
-function generateSkills(min, max) {
+const generateSkills = (min, max) => {
     return {
         passing: Math.floor(Math.random() * (max - min + 1)) + min,
         tackling: Math.floor(Math.random() * (max - min + 1)) + min,
@@ -24,9 +24,9 @@ function generateSkills(min, max) {
         stamina: Math.floor(Math.random() * (max - min + 1)) + min,
         shooting: Math.floor(Math.random() * (max - min + 1)) + min,
     };
-}
+};
 
-function generateTeam(teamObject, league) {
+const generateTeam = (teamObject, league) => {
     const formation = formations[Math.floor(Math.random() * formations.length)];
 
     // TODO: Not happy about this
@@ -105,22 +105,22 @@ function generateTeam(teamObject, league) {
     }
 
     return team;
-}
+};
 
-function generateTransferList() {
-    transferList = [];
+const generateTransferList = () => {
+    transferList.clear();
     for (let i = 0; i < 10; i++) {
         let skills = generateSkills(40, 100);
         const player = generatePlayer({ skills });
-        transferList.push(player);
+        transferList.set(player.id, player);
     }
-}
+};
 
-function generateYouthPlayer(position, teamId) {
+const generateYouthPlayer = (position, teamId) => {
     let skills = generateSkills(50, 80);
     let age = 18;
     return generatePlayer({ skills, position, name, age, team: teamId });
-}
+};
 
 const generatePlayer = ({
     id,
@@ -172,11 +172,11 @@ const generatePlayerId = () => {
     return id;
 };
 
-function simulatePlayoff(teams) {
+const simulatePlayoff = (teams) => {
     let semi1 = new Match().simulate({ home: teams[0], away: teams[3] });
     let semi2 = new Match().simulate({ home: teams[1], away: teams[2] });
     let winner1 = semi1.homeScore > semi1.awayScore ? teams[0] : teams[3];
     let winner2 = semi2.homeScore > semi2.awayScore ? teams[1] : teams[2];
     let final = new Match().simulate({ home: winner1, away: winner2 });
     return final.homeScore > final.awayScore ? winner1 : winner2;
-}
+};

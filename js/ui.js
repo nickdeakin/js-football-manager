@@ -2,11 +2,11 @@
 let uiCurrentHistoryDay = 0;
 let uiCurrentFutureDay = 0;
 
-function showMyTeamPopup() {
+const showMyTeamPopup = () => {
     showTeamPopup(yourTeamId);
-}
+};
 
-function showTeamPopup(teamId) {
+const showTeamPopup = (teamId) => {
     let team = teams.get(teamId);
     let league = leagues.get(team.league);
     let popup = document.getElementById('team-popup');
@@ -61,7 +61,7 @@ function showTeamPopup(teamId) {
     team.players.slice(11, 16).forEach((player, index) => {
         html += `
             <tr>
-                <td><span class="player-link" onclick="showPlayerPopup('${player.id}'))">${player.name}</span></td>
+                <td><span class="player-link" onclick="showPlayerPopup('${player.id}')">${player.name}</span></td>
                 <td>${player.position}</td>
                 <td>${player.getAverageSkill().toFixed(1)}</td>
                 <td>${player.age}</td>
@@ -79,7 +79,7 @@ function showTeamPopup(teamId) {
     team.players.slice(16).forEach((player, index) => {
         html += `
             <tr>
-                <td><span class="player-link" onclick="showPlayerPopup('${player.id}'))">${player.name}</span></td>
+                <td><span class="player-link" onclick="showPlayerPopup('${player.id}')">${player.name}</span></td>
                 <td>${player.position}</td>
                 <td>${player.getAverageSkill().toFixed(1)}</td>
                 <td>${player.age}</td>
@@ -93,14 +93,14 @@ function showTeamPopup(teamId) {
     popup.innerHTML = html;
     popup.style.display = 'block';
     overlay.style.display = 'block';
-}
+};
 
-function hideTeamPopup() {
+const hideTeamPopup = () => {
     document.getElementById('team-popup').style.display = 'none';
     document.getElementById('popup-overlay').style.display = 'none';
-}
+};
 
-function showTransferPopup() {
+const showTransferPopup = () => {
     let popup = document.getElementById('transfer-popup');
     let overlay = document.getElementById('popup-overlay');
     let yourTeam = teams.get(yourTeamId);
@@ -110,7 +110,7 @@ function showTransferPopup() {
             <span class="close-btn" onclick="hideTransferPopup()">X</span>
         </div>
     `;
-    if (transferList.length === 0) {
+    if (transferList.size === 0) {
         html += '<p>No players available for transfer.</p>';
     } else {
         html += `
@@ -130,7 +130,7 @@ function showTransferPopup() {
         transferList.forEach((player) => {
             html += `
                 <tr>
-                    <td><span class="player-link" onclick="showPlayerPopup(${player.id})">${player.name}</span></td>
+                    <td><span class="player-link" onclick="showPlayerPopup('${player.id}')">${player.name}</span></td>
                     <td>${player.position}</td>
                     <td>${player.getAverageSkill().toFixed(1)}</td>
                     <td>${player.age}</td>
@@ -144,14 +144,14 @@ function showTransferPopup() {
     popup.innerHTML = html;
     popup.style.display = 'block';
     overlay.style.display = 'block';
-}
+};
 
-function hideTransferPopup() {
+const hideTransferPopup = () => {
     document.getElementById('transfer-popup').style.display = 'none';
     document.getElementById('popup-overlay').style.display = 'none';
-}
+};
 
-function showPlayerPopup(playerId) {
+const showPlayerPopup = (playerId) => {
     const player = players.get(playerId);
     const isYourTeam = player.team === yourTeamId;
     const team = teams.get(player.team);
@@ -183,41 +183,43 @@ function showPlayerPopup(playerId) {
         </table>
     `;
     if (isYourTeam) {
-        html += `<button onclick="sellPlayerFromPopup(${playerId});hidePlayerPopup()">Sell Player</button>`;
+        html += `<button onclick="sellPlayerFromPopup('${playerId}');hidePlayerPopup()">Sell Player</button>`;
     } else if (!team) {
-        html += `<button onclick="buyPlayerFromPopup(${playerId});hidePlayerPopup()">Buy Player</button>`;
+        html += `<button onclick="buyPlayerFromPopup('${playerId}');hidePlayerPopup()">Buy Player</button>`;
     }
     popup.innerHTML = html;
     popup.style.display = 'block';
     overlay.style.display = 'block';
-}
+};
 
-function hidePlayerPopup() {
+const hidePlayerPopup = () => {
     document.getElementById('player-popup').style.display = 'none';
     document.getElementById('popup-overlay').style.display = 'none';
-}
+};
 
-function sellPlayerFromPopup(teamIndex, playerIndex) {
-    let team = leagues[yourTeamLeagueIndex].teams[teamIndex];
-    let player = team.removePlayer(playerIndex);
+const sellPlayerFromPopup = (playerId) => {
+    const player = players.get(playerId);
+    let team = teams.get(player.team);
+    team.removePlayer(player);
     team.budget += parseFloat(player.value);
-    showTeamPopup(teamIndex);
-}
+    player.team = null;
+    showTeamPopup(team.id);
+};
 
-function buyPlayerFromPopup(transferIndex) {
-    let player = transferList[transferIndex];
-    let yourTeam = leagues[yourTeamLeagueIndex].teams[0];
+const buyPlayerFromPopup = (playerId) => {
+    let player = players.get(playerId);
+    let yourTeam = teams.get(yourTeamId);
     if (yourTeam.budget >= player.value && yourTeam.players.length < 25) {
         yourTeam.addPlayer(player);
         yourTeam.budget -= parseFloat(player.value);
-        transferList.splice(transferIndex, 1);
+        transferList.delete(player.id);
         showTransferPopup();
     } else {
         alert('Not enough budget or squad space (max 25 players)!');
     }
-}
+};
 
-function showResultsPopup(leagueId = yourTeamLeagueId) {
+const showResultsPopup = (leagueId = yourTeamLeagueId) => {
     let popup = document.getElementById('results-popup');
     let overlay = document.getElementById('popup-overlay');
     let league = leagues.get(leagueId);
@@ -278,14 +280,14 @@ function showResultsPopup(leagueId = yourTeamLeagueId) {
     popup.innerHTML += `<div>${controlsHTML}</div><div>${contentHTML}</div>`;
     popup.style.display = 'block';
     overlay.style.display = 'block';
-}
+};
 
-function hideResultsPopup() {
+const hideResultsPopup = () => {
     document.getElementById('results-popup').style.display = 'none';
     document.getElementById('popup-overlay').style.display = 'none';
-}
+};
 
-function showFixturesPopup(leagueId = yourTeamLeagueId) {
+const showFixturesPopup = (leagueId = yourTeamLeagueId) => {
     let popup = document.getElementById('fixtures-popup');
     let overlay = document.getElementById('popup-overlay');
     let league = leagues.get(leagueId);
@@ -348,14 +350,14 @@ function showFixturesPopup(leagueId = yourTeamLeagueId) {
     popup.innerHTML += `<div>${controlsHTML}</div><div>${contentHTML}</div>`;
     popup.style.display = 'block';
     overlay.style.display = 'block';
-}
+};
 
-function hideFixturesPopup() {
+const hideFixturesPopup = () => {
     document.getElementById('fixtures-popup').style.display = 'none';
     document.getElementById('popup-overlay').style.display = 'none';
-}
+};
 
-function showTablePopup(leagueId = yourTeamLeagueId) {
+const showTablePopup = (leagueId = yourTeamLeagueId) => {
     let popup = document.getElementById('table-popup');
     let overlay = document.getElementById('popup-overlay');
     let league = leagues.get(leagueId);
@@ -466,21 +468,21 @@ function showTablePopup(leagueId = yourTeamLeagueId) {
     popup.innerHTML += tableHTML;
     popup.style.display = 'block';
     overlay.style.display = 'block';
-}
+};
 
-function hideTablePopup() {
+const hideTablePopup = () => {
     document.getElementById('table-popup').style.display = 'none';
     document.getElementById('popup-overlay').style.display = 'none';
-}
+};
 
-function hideAllPopups() {
+const hideAllPopups = () => {
     hideTeamPopup();
     hideTransferPopup();
     hideResultsPopup();
     hideFixturesPopup();
     hideTablePopup();
     hidePlayerPopup();
-}
+};
 
 // Initial setup
 generateTransferList();

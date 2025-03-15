@@ -3,7 +3,6 @@ let yourTeamId = 'eng-swindon';
 let yourTeamLeagueId = 0;
 let currentHistoryDay = 0;
 let currentFutureDay = 0;
-let transferList = [];
 let seasonNumber = 1;
 let currentResultLeague = 0;
 let currentMatchDay = 0;
@@ -11,6 +10,7 @@ let currentMatchDay = 0;
 let leagues = new Map();
 let teams = new Map();
 let players = new Map();
+let transferList = new Map();
 
 const setup = () => {
     generateTeams();
@@ -33,47 +33,48 @@ const generateLeagues = () => {
 };
 
 const assignTeamsToLeagues = () => {
-    for (const [leagueId, league] of leagues.entries()) {
-        for (const [teamId, team] of teams.entries()) {
-            if (team.league === leagueId) {
+    leagues.forEach((league) => {
+        teams.forEach((team) => {
+            if (team.league === league.id) {
                 league.teams.push(team);
             }
-        }
-    }
+        });
+    });
 };
 
 const generateMatchDays = () => {
-    for (const [leagueId, league] of leagues.entries()) {
+    leagues.forEach((league) => {
         league.matchDays = league.generateMatchDays();
-    }
+    });
 };
 
-function nextAction() {
-    // TODO: End of season is end of week 52... more or less
-    const leagueArray = [];
-    for (const [leagueId, league] of leagues.entries()) {
-        leagueArray.push(league);
-    }
+const nextAction = () => {
+    let leaguesStillPlaying = [];
+    leagues.forEach((league) => {
+        if (!league.isSeasonOver()) {
+            leaguesStillPlaying.push(league.id);
+        }
+    });
 
-    if (leagueArray.every((league) => league.isSeasonOver())) {
+    if (leaguesStillPlaying.length === 0) {
         newSeason();
     } else {
         simulateMatchDay();
     }
-}
+};
 
-function simulateMatchDay() {
-    for (const [leagueId, league] of leagues.entries()) {
+const simulateMatchDay = () => {
+    leagues.forEach((league) => {
         league.simulateMatchDay();
-    }
+    });
     currentHistoryDay = currentHistoryDay++;
     currentMatchDay++;
     currentResultLeague = yourTeamLeagueId;
     displayMatchDayResults();
     setNextActionButtonText();
-}
+};
 
-function displayMatchDayResults() {
+const displayMatchDayResults = () => {
     let resultDiv = document.getElementById('match-result');
     resultDiv.innerHTML = `<h3>Season ${seasonNumber} - Match Day ${currentMatchDay} Results:</h3>`;
     resultDiv.innerHTML += `
@@ -113,9 +114,9 @@ function displayMatchDayResults() {
     });
     tableHTML += `</tbody></table>`;
     resultDiv.innerHTML += tableHTML;
-}
+};
 
-function setNextActionButtonText() {
+const setNextActionButtonText = () => {
     const leagueArray = [];
     for (const [leagueId, league] of leagues.entries()) {
         leagueArray.push(league);
@@ -124,9 +125,9 @@ function setNextActionButtonText() {
     button.innerText = leagueArray.every((league) => league.isSeasonOver())
         ? 'Next Season'
         : 'Next Match Day';
-}
+};
 
-function newSeason() {
+const newSeason = () => {
     leagues.forEach((league) => {
         let standings = league.getStandings();
         let promoted = [];
@@ -172,24 +173,22 @@ function newSeason() {
             team.losses = 0;
 
             // Handle age increase
-            let retirees = [];
-            team.players.forEach((player, index) => {
+            let retirees = new Map();
+            team.players.forEach((player) => {
                 player.age += 1;
                 player.value = calculateValue(player.skills, player.age);
-                if (player.age > 35) retirees.push(index);
+                if (player.age > 35) {
+                    retirees.set(player.id, player);
+                }
             });
 
             // Handle retirees
-            for (let i = retirees.length - 1; i >= 0; i--) {
-                // Player retires
-                let retiredPlayer = team.removePlayer(retirees[i]);
-                // Youth player takes their place
-                let youth = generateYouthPlayer(
-                    retiredPlayer.position,
-                    team.id
-                );
+            retirees.forEach((player) => {
+                team.removePlayer(player);
+                player.team = 'retired';
+                let youth = generateYouthPlayer(player.position, team.id);
                 team.addPlayer(youth);
-            }
+            });
         });
 
         // Promotions
@@ -225,13 +224,13 @@ function newSeason() {
     resultDiv.innerHTML = `<h3>Season ${seasonNumber} Started!</h3>`;
     hideAllPopups();
     setNextActionButtonText();
-}
+};
 
-function setTeamIndex() {
+const setTeamIndex = () => {
     yourTeamLeagueId = teams.get(yourTeamId).league;
-}
+};
 
-function saveGame() {
+const saveGame = () => {
     const gameState = {
         leagues,
         yourTeamLeagueId,
@@ -254,9 +253,9 @@ function saveGame() {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url); // Clean up
-}
+};
 
-function loadGame() {
+const loadGame = () => {
     const file = event.target.files[0];
     if (!file) return;
     const reader = new FileReader();
@@ -297,7 +296,7 @@ function loadGame() {
         }
     };
     reader.readAsText(file);
-}
+};
 
 // TODO: Disabled for now
 // window.onload = function () { loadGame(); /* existing code */ };

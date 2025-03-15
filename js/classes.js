@@ -21,11 +21,11 @@ class Player {
         this.team = team;
     }
 
-    getAverageSkill() {
+    getAverageSkill = () => {
         return (
             Object.values(this.skills).reduce((sum, val) => sum + val, 0) / 6
         );
-    }
+    };
 }
 
 class Team {
@@ -46,28 +46,28 @@ class Team {
         this.wageBill = 0;
     }
 
-    addPlayer(player) {
+    addPlayer = (player) => {
         this.players.push(player);
         this.wageBill += player.wage;
         this.updateStartingXI(player);
-    }
+    };
 
-    removePlayer(index) {
-        const player = this.players.splice(index, 1)[0];
+    removePlayer = (player) => {
+        const index = this.players.findIndex((x) => x.id === player.id);
+        this.players.splice(index, 1);
         this.wageBill -= player.wage;
-        return player;
-    }
+    };
 
-    getTeamSkill() {
+    getTeamSkill = () => {
         let startingXI = this.players.slice(0, 11);
         let totalSkill = startingXI.reduce(
             (sum, player) => sum + player.getAverageSkill(),
             0
         );
         return totalSkill / startingXI.length || 0;
-    }
+    };
 
-    updateStartingXI(newPlayer) {
+    updateStartingXI = (newPlayer) => {
         const formationMap = {
             '4-4-2': { gk: 1, def: 4, mid: 4, fwd: 2 },
             '4-3-3': { gk: 1, def: 4, mid: 3, fwd: 3 },
@@ -91,11 +91,11 @@ class Team {
             this.players.splice(weakestIndex, 1, newPlayer);
             this.players.push(weakestPlayer);
         }
-    }
+    };
 }
 
 class Match {
-    simulate({ home: home, away: away, league: league }) {
+    simulate = ({ home: home, away: away, league: league }) => {
         let skill1 = home.getTeamSkill();
         let skill2 = away.getTeamSkill();
         let score1 = Math.floor(Math.random() * 5 * (skill1 / 100));
@@ -142,7 +142,7 @@ class Match {
             awayScore: score2,
             attendance: attendance,
         };
-    }
+    };
 }
 
 class League {
@@ -173,11 +173,12 @@ class League {
         this.prizeMoney = prizeMoney;
     }
 
-    isSeasonOver() {
+    isSeasonOver = () => {
         return this.matchDay >= this.matchDays.length;
-    }
+    };
 
-    generateMatchDays() {
+    // TODO: refactor
+    generateMatchDays = () => {
         const n = this.teams.length;
         const matchDays = [];
         const teamIndices = Array.from({ length: n }, (_, i) => i);
@@ -211,9 +212,9 @@ class League {
             }
         });
         return matchDays;
-    }
+    };
 
-    simulateMatchDay() {
+    simulateMatchDay = () => {
         if (this.isSeasonOver()) {
             return [
                 {
@@ -227,7 +228,7 @@ class League {
         }
         let results = [];
         let todayFixtures = this.matchDays[this.matchDay];
-        for (let fixture of todayFixtures) {
+        todayFixtures.forEach((fixture) => {
             let match = new Match();
             results.push(
                 match.simulate({
@@ -236,34 +237,36 @@ class League {
                     league: fixture.league,
                 })
             );
-        }
+        });
         this.teams.forEach((team) => {
             team.budget -= team.wageBill / 1000;
         });
         this.history.push({ matchDay: this.matchDay + 1, results: results });
         this.matchDay++;
         return results;
-    }
+    };
 
-    getStandings() {
+    getStandings = () => {
         return this.teams.sort(
             (a, b) => b.points - a.points || b.wins - a.wins
         );
-    }
+    };
 
-    getFutureFixtures() {
+    getFutureFixtures = () => {
         let future = [];
-        for (let i = this.matchDay; i < this.matchDays.length; i++) {
-            let dayFixtures = this.matchDays[i].map(
+
+        this.matchDays.forEach((matchDay, i) => {
+            let dayFixtures = matchDay.map(
                 (fixture) =>
                     `${teams.get(fixture.home).name} vs ${teams.get(fixture.away).name}`
             );
             future.push({ matchDay: i + 1, fixtures: dayFixtures });
-        }
-        return future;
-    }
+        });
 
-    getTodayResults() {
+        return future;
+    };
+
+    getTodayResults = () => {
         return this.history[this.matchDay - 1]?.results ?? [];
-    }
+    };
 }
