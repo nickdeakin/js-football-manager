@@ -26,6 +26,17 @@ const generateSkills = (min, max) => {
     };
 };
 
+const shuffle = (arr) => {
+    const shuffled = [...arr];
+
+    for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]; // Swap elements
+    }
+
+    return shuffled;
+};
+
 const generateTeam = (teamObject, league) => {
     const formation = formations[Math.floor(Math.random() * formations.length)];
 
@@ -167,7 +178,7 @@ const generatePlayerId = () => {
         const randomId = Math.floor(Math.random() * 16777216);
         id = randomId.toString(16).padStart(6, '0');
         circuitBreaker++;
-    } while (players.has(id) || circuitBreaker > limit);
+    } while (players.has(id) || circuitBreaker < limit);
 
     return id;
 };

@@ -94,7 +94,6 @@ class Team {
     };
 }
 
-
 simulateMatch = ({ home: home, away: away, league: league }) => {
     let skill1 = home.getTeamSkill();
     let skill2 = away.getTeamSkill();
@@ -125,8 +124,7 @@ simulateMatch = ({ home: home, away: away, league: league }) => {
     const ticketPrice = 20;
     const attendance = Math.min(
         Math.floor(
-            ((home.popularity + away.popularity) / 200) *
-                home.stadium.capacity
+            ((home.popularity + away.popularity) / 200) * home.stadium.capacity
         ),
         home.stadium.capacity
     );
@@ -177,6 +175,7 @@ class League {
     };
 
     // TODO: refactor
+    /*
     generateMatchDays = () => {
         const n = this.teams.length;
         const matchDays = [];
@@ -212,6 +211,7 @@ class League {
         });
         return matchDays;
     };
+    */
 
     simulateMatchDay = () => {
         if (this.isSeasonOver()) {

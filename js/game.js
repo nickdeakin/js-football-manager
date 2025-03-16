@@ -5,18 +5,172 @@ let currentHistoryDay = 0;
 let currentFutureDay = 0;
 let seasonNumber = 1;
 let currentResultLeague = 0;
-let currentMatchDay = 0;
+let currentWeek = 0;
+let isMidweek = false;
 
 let leagues = new Map();
 let teams = new Map();
 let players = new Map();
 let transferList = new Map();
 
+let weeks = new Map();
+
 const setup = () => {
     generateTeams();
     generateLeagues();
     assignTeamsToLeagues();
-    generateMatchDays();
+    generateWeeks();
+    generateFixtures();
+};
+
+const generateWeeks = () => {
+    weeks.clear();
+    [...Array(52)].forEach((_, i) => {
+        weeks.set(i + 1, {
+            type: 'season',
+            weekend: {
+                fixtures: {},
+                events: [],
+            },
+            midweek: {
+                fixtures: {},
+                events: [],
+            },
+        });
+    });
+
+    [...Array(4)].forEach((_, i) => {
+        const week = weeks.get(i + 1);
+        week.type = 'preseason';
+    });
+
+    [...Array(2)].forEach((_, i) => {
+        const week = weeks.get(i + 51);
+        week.type = 'postseason';
+    });
+
+    weeks.get(28).weekend.events.push('christmas');
+    weeks.get(28).weekend.events.push('boxingday');
+    weeks.get(29).weekend.events.push('newyears');
+
+    weeks.get(36).weekend.events.push('easter');
+};
+
+const generateFixtures = () => {
+    leagues.forEach((league) => {
+        const fixtures = [];
+        league.teams.forEach((home) => {
+            league.teams.forEach((away) => {
+                if (home.id !== away.id) {
+                    fixtures.push({
+                        home: home.id,
+                        away: away.id,
+                    });
+                }
+            });
+        });
+
+        league.fixtures = fixtures;
+
+        const seasonWeeks = Array.from(
+            weeks.entries().filter(([k, v]) => v.type === 'season')
+        );
+
+        league.teams.forEach((team) => {
+            const teamFixtures = league.fixtures.filter(
+                (fixture) => fixture.home === team.id
+            );
+            teamFixtures.forEach((teamFixture) => {
+                let weeksToChooseFrom = [...seasonWeeks];
+                let weekIndex;
+                let week;
+                let found = false;
+                let count = 0;
+                do {
+                    weekIndex = Math.floor(
+                        Math.random() * weeksToChooseFrom.length
+                    );
+                    if (weeksToChooseFrom[weekIndex]) {
+                        week = weeksToChooseFrom[weekIndex][0];
+                        if (weeks.get(week).weekend.fixtures[league.id]) {
+                            found = weeks
+                                .get(week)
+                                .weekend.fixtures[
+                                    league.id
+                                ].find((weekFixture) => {
+                                    return (
+                                        weekFixture.home === teamFixture.home ||
+                                        weekFixture.away === teamFixture.home ||
+                                        weekFixture.home === teamFixture.away ||
+                                        weekFixture.away === teamFixture.away
+                                    );
+                                });
+                            const index = weeksToChooseFrom.findIndex(
+                                (x) => x[0] === week
+                            );
+                            weeksToChooseFrom.splice(index, 1);
+                        }
+                    }
+                    count++;
+                    if (count > 46) {
+                        break;
+                    }
+                } while (found);
+
+                weeksToChooseFrom = [...seasonWeeks];
+                count = 0;
+                if (found) {
+                    do {
+                        weekIndex = Math.floor(
+                            Math.random() * weeksToChooseFrom.length
+                        );
+                        if (weeksToChooseFrom[weekIndex]) {
+                            week = weeksToChooseFrom[weekIndex][0];
+                            if (weeks.get(week).midweek.fixtures[league.id]) {
+                                found = weeks
+                                    .get(week)
+                                    .midweek.fixtures[
+                                        league.id
+                                    ].find((weekFixture) => {
+                                        return (
+                                            weekFixture.home ===
+                                                teamFixture.home ||
+                                            weekFixture.away ===
+                                                teamFixture.home ||
+                                            weekFixture.home ===
+                                                teamFixture.away ||
+                                            weekFixture.away ===
+                                                teamFixture.away
+                                        );
+                                    });
+                                const index = weeksToChooseFrom.findIndex(
+                                    (x) => x[0] === week
+                                );
+                                weeksToChooseFrom.splice(index, 1);
+                            }
+                        }
+                        count++;
+                        if (count > 46) {
+                            break;
+                        }
+                    } while (found);
+                    if (!weeks.get(week).midweek.fixtures[league.id]) {
+                        weeks.get(week).midweek.fixtures[league.id] = [];
+                    }
+                    weeks
+                        .get(week)
+                        .midweek.fixtures[league.id].push(teamFixture);
+                } else {
+                    if (!weeks.get(week).weekend.fixtures[league.id]) {
+                        weeks.get(week).weekend.fixtures[league.id] = [];
+                    }
+                    weeks
+                        .get(week)
+                        .weekend.fixtures[league.id].push(teamFixture);
+                }
+            });
+        });
+    });
 };
 
 const generateTeams = () => {
@@ -42,12 +196,6 @@ const assignTeamsToLeagues = () => {
     });
 };
 
-const generateMatchDays = () => {
-    leagues.forEach((league) => {
-        league.matchDays = league.generateMatchDays();
-    });
-};
-
 const nextAction = () => {
     let leaguesStillPlaying = [];
     leagues.forEach((league) => {
@@ -68,7 +216,12 @@ const simulateMatchDay = () => {
         league.simulateMatchDay();
     });
     currentHistoryDay = currentHistoryDay++;
-    currentMatchDay++;
+    if (isMidweek) {
+        isMidweek = false;
+        currentWeek++;
+    } else {
+        isMidweek = true;
+    }
     currentResultLeague = yourTeamLeagueId;
     displayMatchDayResults();
     setNextActionButtonText();
@@ -76,7 +229,7 @@ const simulateMatchDay = () => {
 
 const displayMatchDayResults = () => {
     let resultDiv = document.getElementById('match-result');
-    resultDiv.innerHTML = `<h3>Season ${seasonNumber} - Match Day ${currentMatchDay} Results:</h3>`;
+    resultDiv.innerHTML = `<h3>Season ${seasonNumber} - Week ${currentWeek} (${isMidweek ? 'Midweek' : 'Weekend'}) Results:</h3>`;
     resultDiv.innerHTML += `
         <div class="league-tabs">
             <button onclick="currentResultLeague='eng-prem';displayMatchDayResults()">Premier League</button>
@@ -117,14 +270,22 @@ const displayMatchDayResults = () => {
 };
 
 const setNextActionButtonText = () => {
-    const leagueArray = [];
-    for (const [leagueId, league] of leagues.entries()) {
-        leagueArray.push(league);
-    }
+    let leaguesStillPlaying = [];
+    leagues.forEach((league) => {
+        if (!league.isSeasonOver()) {
+            leaguesStillPlaying.push(league.id);
+        }
+    });
     const button = document.getElementById('next-action-button');
-    button.innerText = leagueArray.every((league) => league.isSeasonOver())
-        ? 'Next Season'
-        : 'Next Match Day';
+    let buttonText;
+    if (leaguesStillPlaying.length === 0) {
+        buttonText = 'Begin to new season';
+    } else if (isMidweek) {
+        buttonText = 'Continue to weekend';
+    } else {
+        buttonText = 'Continue to midweek';
+    }
+    button.innerText = buttonText;
 };
 
 const newSeason = () => {
@@ -218,7 +379,9 @@ const newSeason = () => {
     currentFutureDay = 0;
     generateTransferList();
     seasonNumber++;
-    currentMatchDay = 0;
+    currentWeek = 0;
+    isMidweek = false;
+    generateWeeks();
 
     let resultDiv = document.getElementById('match-result');
     resultDiv.innerHTML = `<h3>Season ${seasonNumber} Started!</h3>`;
@@ -240,7 +403,8 @@ const saveGame = () => {
         currentHistoryDay,
         currentFutureDay,
         currentResultLeague,
-        currentMatchDay,
+        currentWeek,
+        isMidweek,
     };
 
     const jsonString = JSON.stringify(gameState, null, 2); // Pretty-print for readability
@@ -277,7 +441,8 @@ const loadGame = () => {
             currentHistoryDay = save.currentHistoryDay;
             currentFutureDay = save.currentFutureDay;
             currentResultLeague = save.currentResultLeague;
-            currentMatchDay = save.currentMatchDay;
+            currentWeek = save.currentWeek;
+            isMidweek = save.isMidweek;
             transferList = save.transferList.map((p) =>
                 Object.assign(new Player(), p)
             );

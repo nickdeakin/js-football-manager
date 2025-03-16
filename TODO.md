@@ -1,9 +1,11 @@
 # Things to do in this game
 
 ## Fixes
+
 1. Fix the save and load
 
 ## Features
+
 1. Use 52 weeks, not single days
 2. Home and away league games
 3. Before games are played, show the fixtures, default to your league and allow league scroll
@@ -22,6 +24,7 @@
 16. News feed
 
 ## Housekeeping
+
 1. Convert to typescript
 2. Lint and test
 3. Host running version somewhere
